@@ -56,10 +56,9 @@ export async function renderProducts(mount) {
   viewState.archiveTarget = null;
 
   // Load categories
-  viewState.categories = await db.categories
-    .where("is_active")
-    .equals(1)
-    .toArray();
+  viewState.categories = (await db.categories.toArray()).filter((c) =>
+    toBool(c.is_active),
+  );
 
   // Render shell
   mount.innerHTML = buildShell();
