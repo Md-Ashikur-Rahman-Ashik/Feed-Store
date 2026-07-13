@@ -7,8 +7,8 @@
  */
 
 import db from "./schema.js";
-import { CATEGORY_COLORS, nowISO } from "../config.js";
-import { uuid } from "../utils/uuid.js";
+import { CATEGORY_COLORS } from "../config.js";
+import { uuid, nowISO } from "../utils/uuid.js";
 
 const SEED_CATEGORIES = [
   {

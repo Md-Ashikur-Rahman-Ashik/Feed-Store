@@ -15,6 +15,7 @@ import { CONFIG, CATEGORY_COLORS } from './config.js';
 import * as auth from './utils/auth.js';
 import * as router from './router.js';
 import SettingsService from './services/settingsService.js';
+import { seedCategories } from './db/seed.js';
 import { updateHeader, updateNav, setAppSettings, showToast } from './views/viewHelpers.js';
 import { renderProducts } from './views/productsView.js';
 
@@ -642,6 +643,9 @@ router.registerRoute('settings', renderSettings);
 // ============================================================
 
 (async function init() {
+    // Ensure feed categories exist in the database
+    await seedCategories();
+
     const appEl = document.getElementById('app');
     if (auth.isLoggedIn()) {
         const result = await SettingsService.get();
