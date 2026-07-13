@@ -227,6 +227,8 @@ function openDetailSheet(customer) {
       openArchiveModal(customer);
     });
   }
+
+  openSheet();
 }
 
 // --- FORM SHEET ---
@@ -295,6 +297,8 @@ function openFormSheet(customer) {
       document.getElementById("cf-phone").focus();
     }
   });
+
+  openSheet();
 }
 
 async function handleFormSubmit() {
