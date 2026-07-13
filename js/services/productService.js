@@ -120,10 +120,9 @@ const ProductService = {
         return { success: false, error: "Low stock alert cannot be negative" };
 
       // Uniqueness check: name + category among active products
-      const allActive = await db.products
-        .where("is_active")
-        .equals(1)
-        .toArray();
+      const allActive = (await db.products.toArray()).filter((p) =>
+        toBool(p.is_active),
+      );
       const dup = allActive.find(
         (p) =>
           p.category_id === data.category_id &&
@@ -209,10 +208,9 @@ const ProductService = {
         data.category_id !== undefined
           ? data.category_id
           : existing.category_id;
-      const allActive = await db.products
-        .where("is_active")
-        .equals(1)
-        .toArray();
+      const allActive = (await db.products.toArray()).filter((p) =>
+        toBool(p.is_active),
+      );
       const dup = allActive.find(
         (p) =>
           p.id !== id &&
