@@ -222,6 +222,8 @@ function openDetailSheet(supplier) {
       openArchiveModal(supplier);
     });
   }
+
+  openSheet();
 }
 
 function openFormSheet(supplier) {
@@ -288,6 +290,8 @@ function openFormSheet(supplier) {
       document.getElementById("sf-phone").focus();
     }
   });
+
+  openSheet();
 }
 
 async function handleFormSubmit() {
