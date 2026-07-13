@@ -10,23 +10,30 @@
  *   6. Route registration & initialization
  */
 
-import db from './db/schema.js';
-import { CONFIG, CATEGORY_COLORS } from './config.js';
-import * as auth from './utils/auth.js';
-import * as router from './router.js';
-import SettingsService from './services/settingsService.js';
-import { seedCategories } from './db/seed.js';
-import { updateHeader, updateNav, setAppSettings, showToast } from './views/viewHelpers.js';
-import { renderProducts } from './views/productsView.js';
+import db from "./db/schema.js";
+import { CONFIG, CATEGORY_COLORS } from "./config.js";
+import * as auth from "./utils/auth.js";
+import * as router from "./router.js";
+import SettingsService from "./services/settingsService.js";
+import { seedCategories } from "./db/seed.js";
+import {
+  updateHeader,
+  updateNav,
+  setAppSettings,
+  showToast,
+} from "./views/viewHelpers.js";
+import { renderProducts } from "./views/productsView.js";
+import { renderCustomers } from "./views/customersView.js";
+import { renderSuppliers } from "./views/suppliersView.js";
 
 // ============================================================
 // APP STATE
 // ============================================================
 
 const state = {
-    settings: null,
-    moreOpen: false,
-    logoutOpen: false
+  settings: null,
+  moreOpen: false,
+  logoutOpen: false,
 };
 
 // ============================================================
@@ -34,9 +41,9 @@ const state = {
 // ============================================================
 
 function renderLogin(mount) {
-    let isFirstVisit = false;
+  let isFirstVisit = false;
 
-    mount.innerHTML = `
+  mount.innerHTML = `
         <div class="min-h-screen flex items-center justify-center px-6"
              style="background: linear-gradient(160deg, #F5F3EF 0%, #EDE8DF 100%);">
             <div class="w-full max-w-sm">
@@ -63,18 +70,19 @@ function renderLogin(mount) {
         </div>
     `;
 
-    if (window.lucide) lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 
-    auth.isPasswordSet().then(set => {
-        isFirstVisit = !set;
-        document.getElementById('login-subtitle').textContent =
-            isFirstVisit ? 'Create a password to get started' : 'Enter your password to continue';
-        renderForm(isFirstVisit);
-    });
+  auth.isPasswordSet().then((set) => {
+    isFirstVisit = !set;
+    document.getElementById("login-subtitle").textContent = isFirstVisit
+      ? "Create a password to get started"
+      : "Enter your password to continue";
+    renderForm(isFirstVisit);
+  });
 
-    function renderForm(firstVisit) {
-        const form = document.getElementById('login-form');
-        form.innerHTML = `
+  function renderForm(firstVisit) {
+    const form = document.getElementById("login-form");
+    form.innerHTML = `
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-stone-700 mb-1.5">Password</label>
@@ -92,7 +100,7 @@ function renderLogin(mount) {
                         </button>
                     </div>
                 </div>
-                <div id="confirm-pw-group" class="${firstVisit ? '' : 'hidden'}">
+                <div id="confirm-pw-group" class="${firstVisit ? "" : "hidden"}">
                     <label class="block text-sm font-medium text-stone-700 mb-1.5">Confirm Password</label>
                     <div class="relative">
                         <input id="login-confirm-pw" type="password" autocomplete="new-password"
@@ -112,75 +120,77 @@ function renderLogin(mount) {
                         class="w-full h-12 bg-amber-700 hover:bg-amber-800 text-white font-semibold
                                rounded-lg text-base transition-colors disabled:opacity-50
                                disabled:cursor-not-allowed mt-2">
-                    ${firstVisit ? 'Get Started' : 'Login'}
+                    ${firstVisit ? "Get Started" : "Login"}
                 </button>
             </div>
         `;
+    if (window.lucide) lucide.createIcons();
+    attachFormHandlers(firstVisit);
+  }
+
+  function attachFormHandlers(firstVisit) {
+    const togglePw = (inputId, btnId) => {
+      const input = document.getElementById(inputId);
+      const btn = document.getElementById(btnId);
+      btn.addEventListener("click", () => {
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        btn.innerHTML = `<i data-lucide="${show ? "eye-off" : "eye"}" class="w-5 h-5"></i>`;
         if (window.lucide) lucide.createIcons();
-        attachFormHandlers(firstVisit);
-    }
+      });
+    };
+    togglePw("login-pw", "login-toggle-pw");
+    if (firstVisit) togglePw("login-confirm-pw", "login-toggle-confirm");
 
-    function attachFormHandlers(firstVisit) {
-        const togglePw = (inputId, btnId) => {
-            const input = document.getElementById(inputId);
-            const btn = document.getElementById(btnId);
-            btn.addEventListener('click', () => {
-                const show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                btn.innerHTML = `<i data-lucide="${show ? 'eye-off' : 'eye'}" class="w-5 h-5"></i>`;
-                if (window.lucide) lucide.createIcons();
-            });
-        };
-        togglePw('login-pw', 'login-toggle-pw');
-        if (firstVisit) togglePw('login-confirm-pw', 'login-toggle-confirm');
+    document.getElementById("login-btn").addEventListener("click", async () => {
+      const errEl = document.getElementById("login-error");
+      const btn = document.getElementById("login-btn");
+      const pw = document.getElementById("login-pw").value;
+      errEl.classList.add("hidden");
+      btn.disabled = true;
+      btn.textContent = "Please wait...";
 
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            const errEl = document.getElementById('login-error');
-            const btn = document.getElementById('login-btn');
-            const pw = document.getElementById('login-pw').value;
-            errEl.classList.add('hidden');
-            btn.disabled = true;
-            btn.textContent = 'Please wait...';
-
-            let result;
-            if (firstVisit) {
-                const confirm = document.getElementById('login-confirm-pw').value;
-                if (pw !== confirm) {
-                    errEl.textContent = 'Passwords do not match';
-                    errEl.classList.remove('hidden');
-                    btn.disabled = false;
-                    btn.textContent = 'Get Started';
-                    return;
-                }
-                result = await auth.setPassword(pw);
-            } else {
-                result = await auth.verifyPassword(pw);
-            }
-
-            if (result.success) {
-                const s = await SettingsService.get();
-                state.settings = s.data;
-                setAppSettings(state.settings);
-                renderShell(document.getElementById('app'));
-                router.setMountPoint(document.getElementById('view-mount'));
-                router.navigate('dashboard');
-            } else {
-                errEl.textContent = result.error;
-                errEl.classList.remove('hidden');
-                btn.disabled = false;
-                btn.textContent = firstVisit ? 'Get Started' : 'Login';
-            }
-        });
-
-        document.getElementById('login-pw').addEventListener('keydown', e => {
-            if (e.key === 'Enter') document.getElementById('login-btn').click();
-        });
-        if (firstVisit) {
-            document.getElementById('login-confirm-pw').addEventListener('keydown', e => {
-                if (e.key === 'Enter') document.getElementById('login-btn').click();
-            });
+      let result;
+      if (firstVisit) {
+        const confirm = document.getElementById("login-confirm-pw").value;
+        if (pw !== confirm) {
+          errEl.textContent = "Passwords do not match";
+          errEl.classList.remove("hidden");
+          btn.disabled = false;
+          btn.textContent = "Get Started";
+          return;
         }
+        result = await auth.setPassword(pw);
+      } else {
+        result = await auth.verifyPassword(pw);
+      }
+
+      if (result.success) {
+        const s = await SettingsService.get();
+        state.settings = s.data;
+        setAppSettings(state.settings);
+        renderShell(document.getElementById("app"));
+        router.setMountPoint(document.getElementById("view-mount"));
+        router.navigate("dashboard");
+      } else {
+        errEl.textContent = result.error;
+        errEl.classList.remove("hidden");
+        btn.disabled = false;
+        btn.textContent = firstVisit ? "Get Started" : "Login";
+      }
+    });
+
+    document.getElementById("login-pw").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("login-btn").click();
+    });
+    if (firstVisit) {
+      document
+        .getElementById("login-confirm-pw")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") document.getElementById("login-btn").click();
+        });
     }
+  }
 }
 
 // ============================================================
@@ -188,8 +198,8 @@ function renderLogin(mount) {
 // ============================================================
 
 function renderShell(appEl) {
-    const name = state.settings?.store_name || 'Feed Store';
-    appEl.innerHTML = `
+  const name = state.settings?.store_name || "Feed Store";
+  appEl.innerHTML = `
         <header id="app-header" class="fixed top-0 left-0 right-0 h-14 bg-white border-b border-stone-200
                                        flex items-center px-4 z-30"
                 style="padding-top: env(safe-area-inset-top, 0px);">
@@ -290,56 +300,70 @@ function renderShell(appEl) {
             </div>
         </div>
     `;
-    if (window.lucide) lucide.createIcons();
-    attachShellHandlers();
+  if (window.lucide) lucide.createIcons();
+  attachShellHandlers();
 }
 
 function attachShellHandlers() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.dataset.nav;
-            if (target === 'more') { openMore(); }
-            else { closeMore(); router.navigate(target); }
-        });
+  document.querySelectorAll(".nav-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.nav;
+      if (target === "more") {
+        openMore();
+      } else {
+        closeMore();
+        router.navigate(target);
+      }
     });
-    document.querySelectorAll('.more-item').forEach(btn => {
-        btn.addEventListener('click', () => { closeMore(); router.navigate(btn.dataset.more); });
+  });
+  document.querySelectorAll(".more-item").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      closeMore();
+      router.navigate(btn.dataset.more);
     });
-    document.getElementById('more-overlay').addEventListener('click', closeMore);
-    document.getElementById('header-logout').addEventListener('click', () => {
-        state.logoutOpen = true;
-        const m = document.getElementById('logout-modal');
-        m.classList.remove('opacity-0', 'pointer-events-none');
-        m.classList.add('opacity-100', 'pointer-events-auto');
-    });
-    document.getElementById('logout-cancel').addEventListener('click', closeLogout);
-    document.getElementById('logout-confirm').addEventListener('click', () => { closeLogout(); auth.logout(); });
-    document.getElementById('logout-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeLogout(); });
+  });
+  document.getElementById("more-overlay").addEventListener("click", closeMore);
+  document.getElementById("header-logout").addEventListener("click", () => {
+    state.logoutOpen = true;
+    const m = document.getElementById("logout-modal");
+    m.classList.remove("opacity-0", "pointer-events-none");
+    m.classList.add("opacity-100", "pointer-events-auto");
+  });
+  document
+    .getElementById("logout-cancel")
+    .addEventListener("click", closeLogout);
+  document.getElementById("logout-confirm").addEventListener("click", () => {
+    closeLogout();
+    auth.logout();
+  });
+  document.getElementById("logout-modal").addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) closeLogout();
+  });
 }
 
 function openMore() {
-    state.moreOpen = true;
-    const o = document.getElementById('more-overlay');
-    const s = document.getElementById('more-sheet');
-    o.classList.remove('opacity-0', 'pointer-events-none');
-    o.classList.add('opacity-100', 'pointer-events-auto');
-    s.classList.remove('translate-y-full');
-    s.classList.add('translate-y-0');
+  state.moreOpen = true;
+  const o = document.getElementById("more-overlay");
+  const s = document.getElementById("more-sheet");
+  o.classList.remove("opacity-0", "pointer-events-none");
+  o.classList.add("opacity-100", "pointer-events-auto");
+  s.classList.remove("translate-y-full");
+  s.classList.add("translate-y-0");
 }
 function closeMore() {
-    state.moreOpen = false;
-    const o = document.getElementById('more-overlay');
-    const s = document.getElementById('more-sheet');
-    o.classList.add('opacity-0', 'pointer-events-none');
-    o.classList.remove('opacity-100', 'pointer-events-auto');
-    s.classList.add('translate-y-full');
-    s.classList.remove('translate-y-0');
+  state.moreOpen = false;
+  const o = document.getElementById("more-overlay");
+  const s = document.getElementById("more-sheet");
+  o.classList.add("opacity-0", "pointer-events-none");
+  o.classList.remove("opacity-100", "pointer-events-auto");
+  s.classList.add("translate-y-full");
+  s.classList.remove("translate-y-0");
 }
 function closeLogout() {
-    state.logoutOpen = false;
-    const m = document.getElementById('logout-modal');
-    m.classList.add('opacity-0', 'pointer-events-none');
-    m.classList.remove('opacity-100', 'pointer-events-auto');
+  state.logoutOpen = false;
+  const m = document.getElementById("logout-modal");
+  m.classList.add("opacity-0", "pointer-events-none");
+  m.classList.remove("opacity-100", "pointer-events-auto");
 }
 
 // ============================================================
@@ -347,15 +371,18 @@ function closeLogout() {
 // ============================================================
 
 function renderPlaceholder(mount, { title, description, phase, items }) {
-    updateHeader(title);
-    updateNav(router.getCurrentRoute());
-    const itemsHtml = items.map(i =>
+  updateHeader(title);
+  updateNav(router.getCurrentRoute());
+  const itemsHtml = items
+    .map(
+      (i) =>
         `<li class="flex items-start gap-2 text-sm text-stone-600">
             <i data-lucide="check" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
             <span>${i}</span>
-        </li>`
-    ).join('');
-    mount.innerHTML = `
+        </li>`,
+    )
+    .join("");
+  mount.innerHTML = `
         <div class="p-4 space-y-5">
             <div><p class="text-stone-500 text-sm">${description}</p></div>
             <div class="bg-white rounded-xl border border-stone-200 p-5">
@@ -367,7 +394,7 @@ function renderPlaceholder(mount, { title, description, phase, items }) {
             </div>
         </div>
     `;
-    if (window.lucide) lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 }
 
 // ============================================================
@@ -375,9 +402,9 @@ function renderPlaceholder(mount, { title, description, phase, items }) {
 // ============================================================
 
 function renderDashboard(mount) {
-    updateHeader(null);
-    updateNav('dashboard');
-    mount.innerHTML = `
+  updateHeader(null);
+  updateNav("dashboard");
+  mount.innerHTML = `
         <div class="p-4 space-y-5">
             <div class="grid grid-cols-3 gap-3">
                 <div class="bg-white rounded-xl border border-stone-200 p-3 text-center">
@@ -423,7 +450,7 @@ function renderDashboard(mount) {
             </div>
         </div>
     `;
-    if (window.lucide) lucide.createIcons();
+  if (window.lucide) lucide.createIcons();
 }
 
 // ============================================================
@@ -431,31 +458,31 @@ function renderDashboard(mount) {
 // ============================================================
 
 function renderSettings(mount) {
-    updateHeader('Settings');
-    updateNav('more');
-    const s = state.settings || {};
-    mount.innerHTML = `
+  updateHeader("Settings");
+  updateNav("more");
+  const s = state.settings || {};
+  mount.innerHTML = `
         <div class="p-4 space-y-5">
             <div class="bg-white rounded-xl border border-stone-200 p-4 space-y-4">
                 <h3 class="text-sm font-semibold text-stone-700">Store Information</h3>
                 <div id="settings-msg" class="hidden p-3 rounded-lg text-sm"></div>
                 <div>
                     <label class="block text-sm font-medium text-stone-600 mb-1">Store Name</label>
-                    <input id="s-name" type="text" value="${s.store_name || ''}"
+                    <input id="s-name" type="text" value="${s.store_name || ""}"
                         class="w-full h-11 px-3 border border-stone-300 rounded-lg text-stone-900
                                text-sm focus:outline-none focus:ring-2 focus:ring-amber-700
                                focus:border-amber-700" style="font-size:16px;">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-stone-600 mb-1">Address</label>
-                    <input id="s-address" type="text" value="${s.store_address || ''}"
+                    <input id="s-address" type="text" value="${s.store_address || ""}"
                         class="w-full h-11 px-3 border border-stone-300 rounded-lg text-stone-900
                                text-sm focus:outline-none focus:ring-2 focus:ring-amber-700
                                focus:border-amber-700" style="font-size:16px;">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-stone-600 mb-1">Phone</label>
-                    <input id="s-phone" type="tel" value="${s.store_phone || ''}"
+                    <input id="s-phone" type="tel" value="${s.store_phone || ""}"
                         class="w-full h-11 px-3 border border-stone-300 rounded-lg text-stone-900
                                text-sm focus:outline-none focus:ring-2 focus:ring-amber-700
                                focus:border-amber-700" style="font-size:16px;">
@@ -497,164 +524,161 @@ function renderSettings(mount) {
         </div>
     `;
 
-    document.getElementById('s-save').addEventListener('click', async () => {
-        const btn = document.getElementById('s-save');
-        const msg = document.getElementById('settings-msg');
-        btn.disabled = true;
-        const result = await SettingsService.update({
-            store_name: document.getElementById('s-name').value.trim(),
-            store_address: document.getElementById('s-address').value.trim(),
-            store_phone: document.getElementById('s-phone').value.trim()
-        });
-        if (result.success) {
-            state.settings = result.data;
-            setAppSettings(result.data);
-            document.getElementById('header-title').textContent = result.data.store_name || 'Feed Store';
-            msg.className = 'p-3 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200';
-            msg.textContent = 'Settings saved successfully';
-            msg.classList.remove('hidden');
-        } else {
-            msg.className = 'p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200';
-            msg.textContent = result.error;
-            msg.classList.remove('hidden');
-        }
-        btn.disabled = false;
-        setTimeout(() => msg.classList.add('hidden'), 3000);
+  document.getElementById("s-save").addEventListener("click", async () => {
+    const btn = document.getElementById("s-save");
+    const msg = document.getElementById("settings-msg");
+    btn.disabled = true;
+    const result = await SettingsService.update({
+      store_name: document.getElementById("s-name").value.trim(),
+      store_address: document.getElementById("s-address").value.trim(),
+      store_phone: document.getElementById("s-phone").value.trim(),
     });
+    if (result.success) {
+      state.settings = result.data;
+      setAppSettings(result.data);
+      document.getElementById("header-title").textContent =
+        result.data.store_name || "Feed Store";
+      msg.className =
+        "p-3 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200";
+      msg.textContent = "Settings saved successfully";
+      msg.classList.remove("hidden");
+    } else {
+      msg.className =
+        "p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200";
+      msg.textContent = result.error;
+      msg.classList.remove("hidden");
+    }
+    btn.disabled = false;
+    setTimeout(() => msg.classList.add("hidden"), 3000);
+  });
 
-    document.getElementById('pw-save').addEventListener('click', async () => {
-        const btn = document.getElementById('pw-save');
-        const msg = document.getElementById('pw-msg');
-        const current = document.getElementById('pw-current').value;
-        const newPw = document.getElementById('pw-new').value;
-        const confirm = document.getElementById('pw-confirm').value;
-        msg.classList.add('hidden');
-        if (newPw !== confirm) {
-            msg.className = 'p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200';
-            msg.textContent = 'New passwords do not match';
-            msg.classList.remove('hidden');
-            return;
-        }
-        btn.disabled = true;
-        const result = await auth.changePassword(current, newPw);
-        btn.disabled = false;
-        if (result.success) {
-            msg.className = 'p-3 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200';
-            msg.textContent = 'Password updated successfully';
-            msg.classList.remove('hidden');
-            document.getElementById('pw-current').value = '';
-            document.getElementById('pw-new').value = '';
-            document.getElementById('pw-confirm').value = '';
-        } else {
-            msg.className = 'p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200';
-            msg.textContent = result.error;
-            msg.classList.remove('hidden');
-        }
-        setTimeout(() => msg.classList.add('hidden'), 3000);
-    });
+  document.getElementById("pw-save").addEventListener("click", async () => {
+    const btn = document.getElementById("pw-save");
+    const msg = document.getElementById("pw-msg");
+    const current = document.getElementById("pw-current").value;
+    const newPw = document.getElementById("pw-new").value;
+    const confirm = document.getElementById("pw-confirm").value;
+    msg.classList.add("hidden");
+    if (newPw !== confirm) {
+      msg.className =
+        "p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200";
+      msg.textContent = "New passwords do not match";
+      msg.classList.remove("hidden");
+      return;
+    }
+    btn.disabled = true;
+    const result = await auth.changePassword(current, newPw);
+    btn.disabled = false;
+    if (result.success) {
+      msg.className =
+        "p-3 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200";
+      msg.textContent = "Password updated successfully";
+      msg.classList.remove("hidden");
+      document.getElementById("pw-current").value = "";
+      document.getElementById("pw-new").value = "";
+      document.getElementById("pw-confirm").value = "";
+    } else {
+      msg.className =
+        "p-3 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200";
+      msg.textContent = result.error;
+      msg.classList.remove("hidden");
+    }
+    setTimeout(() => msg.classList.add("hidden"), 3000);
+  });
 }
 
 // ============================================================
 // ROUTE REGISTRATION
 // ============================================================
 
-router.registerRoute('login', renderLogin);
-router.registerRoute('dashboard', renderDashboard);
-router.registerRoute('products', renderProducts);
+router.registerRoute("login", renderLogin);
+router.registerRoute("dashboard", renderDashboard);
+router.registerRoute("products", renderProducts);
 
-router.registerRoute('sale', (mount) => renderPlaceholder(mount, {
-    title: 'New Sale',
-    description: 'Record a customer purchase — cash, credit, or partial payment.',
-    phase: 'P4',
+router.registerRoute("sale", (mount) =>
+  renderPlaceholder(mount, {
+    title: "New Sale",
+    description:
+      "Record a customer purchase — cash, credit, or partial payment.",
+    phase: "P4",
     items: [
-        'Select customer or create walk-in sale',
-        'Add feed items with quantity and price',
-        'Choose payment method: Cash, Credit, or Partial',
-        'Stock deducted automatically',
-        'Customer balance updated for credit sales',
-        'Receipt generated for printing'
-    ]
-}));
+      "Select customer or create walk-in sale",
+      "Add feed items with quantity and price",
+      "Choose payment method: Cash, Credit, or Partial",
+      "Stock deducted automatically",
+      "Customer balance updated for credit sales",
+      "Receipt generated for printing",
+    ],
+  }),
+);
 
-router.registerRoute('purchase', (mount) => renderPlaceholder(mount, {
-    title: 'New Purchase',
-    description: 'Record incoming stock from a supplier.',
-    phase: 'P5',
+router.registerRoute("purchase", (mount) =>
+  renderPlaceholder(mount, {
+    title: "New Purchase",
+    description: "Record incoming stock from a supplier.",
+    phase: "P5",
     items: [
-        'Select supplier',
-        'Add feed items received with quantity and cost',
-        'Stock added automatically',
-        'Supplier balance updated for credit purchases',
-        'Track payment method: Cash or Credit'
-    ]
-}));
+      "Select supplier",
+      "Add feed items received with quantity and cost",
+      "Stock added automatically",
+      "Supplier balance updated for credit purchases",
+      "Track payment method: Cash or Credit",
+    ],
+  }),
+);
 
-router.registerRoute('customers', (mount) => renderPlaceholder(mount, {
-    title: 'Customers',
-    description: 'View and manage your customer list and their accounts.',
-    phase: 'P3',
+router.registerRoute("customers", renderCustomers);
+router.registerRoute("suppliers", renderSuppliers);
+
+router.registerRoute("reports", (mount) =>
+  renderPlaceholder(mount, {
+    title: "Reports",
+    description: "View business reports and summaries.",
+    phase: "P7",
     items: [
-        'Add and edit customer details',
-        'View outstanding balances',
-        'See full account statement (ledger)',
-        'Filter customers with pending dues'
-    ]
-}));
+      "Daily summary: sales, purchases, cash, credit, profit",
+      "Date range reports",
+      "Category-wise sales breakdown",
+      "Outstanding credits report — who owes what",
+    ],
+  }),
+);
 
-router.registerRoute('suppliers', (mount) => renderPlaceholder(mount, {
-    title: 'Suppliers',
-    description: 'View and manage your supplier list and their accounts.',
-    phase: 'P3',
+router.registerRoute("cash-book", (mount) =>
+  renderPlaceholder(mount, {
+    title: "Cash Book",
+    description: "Track cash flow in and out of the store.",
+    phase: "P7",
     items: [
-        'Add and edit supplier details',
-        'View amounts owed to suppliers',
-        'See full account statement (ledger)',
-        'Filter suppliers with pending balances'
-    ]
-}));
+      "Today's cash flow: opening balance, cash in, cash out, closing",
+      "Historical cash flow by date",
+      "Link each entry to its source transaction",
+    ],
+  }),
+);
 
-router.registerRoute('reports', (mount) => renderPlaceholder(mount, {
-    title: 'Reports',
-    description: 'View business reports and summaries.',
-    phase: 'P7',
-    items: [
-        'Daily summary: sales, purchases, cash, credit, profit',
-        'Date range reports',
-        'Category-wise sales breakdown',
-        'Outstanding credits report — who owes what'
-    ]
-}));
-
-router.registerRoute('cash-book', (mount) => renderPlaceholder(mount, {
-    title: 'Cash Book',
-    description: 'Track cash flow in and out of the store.',
-    phase: 'P7',
-    items: [
-        "Today's cash flow: opening balance, cash in, cash out, closing",
-        'Historical cash flow by date',
-        'Link each entry to its source transaction'
-    ]
-}));
-
-router.registerRoute('settings', renderSettings);
+router.registerRoute("settings", renderSettings);
 
 // ============================================================
 // INITIALIZATION
 // ============================================================
 
 (async function init() {
-    // Ensure feed categories exist in the database
-    await seedCategories();
+  // Ensure feed categories exist in the database
+  await seedCategories();
 
-    const appEl = document.getElementById('app');
-    if (auth.isLoggedIn()) {
-        const result = await SettingsService.get();
-        if (!result.data) { auth.logout(); return; }
-        state.settings = result.data;
-        setAppSettings(state.settings);
-        renderShell(appEl);
-        router.initRouter(document.getElementById('view-mount'), auth.isLoggedIn);
-    } else {
-        router.initRouter(appEl, auth.isLoggedIn);
+  const appEl = document.getElementById("app");
+  if (auth.isLoggedIn()) {
+    const result = await SettingsService.get();
+    if (!result.data) {
+      auth.logout();
+      return;
     }
+    state.settings = result.data;
+    setAppSettings(state.settings);
+    renderShell(appEl);
+    router.initRouter(document.getElementById("view-mount"), auth.isLoggedIn);
+  } else {
+    router.initRouter(appEl, auth.isLoggedIn);
+  }
 })();
