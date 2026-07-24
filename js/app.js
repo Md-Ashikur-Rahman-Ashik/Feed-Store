@@ -1,15 +1,3 @@
-/**
- * app.js — Application shell, login, all views, settings.
- *
- * Structure:
- *   1. Imports & state
- *   2. Login view
- *   3. App shell (header, bottom nav, more menu, logout modal)
- *   4. Placeholder views
- *   5. Settings view
- *   6. Route registration & initialization
- */
-
 import db from "./db/schema.js";
 import { CONFIG, CATEGORY_COLORS } from "./config.js";
 import * as auth from "./utils/auth.js";
@@ -25,6 +13,7 @@ import {
 import { renderProducts } from "./views/productsView.js";
 import { renderCustomers } from "./views/customersView.js";
 import { renderSuppliers } from "./views/suppliersView.js";
+import { renderSale } from "./views/saleView.js";
 
 // ============================================================
 // APP STATE
@@ -594,23 +583,7 @@ function renderSettings(mount) {
 router.registerRoute("login", renderLogin);
 router.registerRoute("dashboard", renderDashboard);
 router.registerRoute("products", renderProducts);
-
-router.registerRoute("sale", (mount) =>
-  renderPlaceholder(mount, {
-    title: "New Sale",
-    description:
-      "Record a customer purchase — cash, credit, or partial payment.",
-    phase: "P4",
-    items: [
-      "Select customer or create walk-in sale",
-      "Add feed items with quantity and price",
-      "Choose payment method: Cash, Credit, or Partial",
-      "Stock deducted automatically",
-      "Customer balance updated for credit sales",
-      "Receipt generated for printing",
-    ],
-  }),
-);
+router.registerRoute("sale", renderSale);
 
 router.registerRoute("purchase", (mount) =>
   renderPlaceholder(mount, {
