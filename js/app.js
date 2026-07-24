@@ -14,20 +14,13 @@ import { renderProducts } from "./views/productsView.js";
 import { renderCustomers } from "./views/customersView.js";
 import { renderSuppliers } from "./views/suppliersView.js";
 import { renderSale } from "./views/saleView.js";
-
-// ============================================================
-// APP STATE
-// ============================================================
+import { renderPurchase } from "./views/purchaseView.js";
 
 const state = {
   settings: null,
   moreOpen: false,
   logoutOpen: false,
 };
-
-// ============================================================
-// LOGIN VIEW
-// ============================================================
 
 function renderLogin(mount) {
   let isFirstVisit = false;
@@ -576,30 +569,11 @@ function renderSettings(mount) {
   });
 }
 
-// ============================================================
-// ROUTE REGISTRATION
-// ============================================================
-
 router.registerRoute("login", renderLogin);
 router.registerRoute("dashboard", renderDashboard);
 router.registerRoute("products", renderProducts);
 router.registerRoute("sale", renderSale);
-
-router.registerRoute("purchase", (mount) =>
-  renderPlaceholder(mount, {
-    title: "New Purchase",
-    description: "Record incoming stock from a supplier.",
-    phase: "P5",
-    items: [
-      "Select supplier",
-      "Add feed items received with quantity and cost",
-      "Stock added automatically",
-      "Supplier balance updated for credit purchases",
-      "Track payment method: Cash or Credit",
-    ],
-  }),
-);
-
+router.registerRoute("purchase", renderPurchase);
 router.registerRoute("customers", renderCustomers);
 router.registerRoute("suppliers", renderSuppliers);
 
