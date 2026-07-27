@@ -1,12 +1,3 @@
-/**
- * supplierService.js — Supplier management.
- * @implements P3
- *
- * Identical logic to CustomerService but for suppliers.
- * Balance = amount the store owes the supplier.
- * Archive blocked if balance > 0.
- */
-
 import db from "../db/schema.js";
 import { uuid, nowISO } from "../utils/uuid.js";
 import { toBool } from "../utils/helpers.js";
@@ -128,6 +119,32 @@ const SupplierService = {
         syncedAt: null,
       });
       return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async getLedger(supplierId, options = {}) {
+    try {
+      const supplier = await db.suppliers.get(supplierId);
+      if (!supplier) return { success: false, error: "Supplier not found" };
+
+      let entries = (await db.ledger_entries.toArray())
+        .filter(
+          (e) => e.entity_type === "SUPPLIER" && e.entity_id === supplierId,
+        )
+        .sort(
+          (a, b) =>
+            a.entry_date.localeCompare(b.entry_date) ||
+            a.created_at.localeCompare(b.created_at),
+        );
+
+      if (options.fromDate)
+        entries = entries.filter((e) => e.entry_date >= options.fromDate);
+      if (options.toDate)
+        entries = entries.filter((e) => e.entry_date <= options.toDate);
+
+      return { success: true, data: { supplier, entries } };
     } catch (e) {
       return { success: false, error: e.message };
     }
