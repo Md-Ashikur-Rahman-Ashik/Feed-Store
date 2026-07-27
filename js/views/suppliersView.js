@@ -1,10 +1,3 @@
-/**
- * suppliersView.js — Supplier list, detail, add, edit, archive.
- *
- * Structurally identical to customersView, separated for clarity.
- * Balance here = amount the store owes the supplier.
- */
-
 import SupplierService from "../services/supplierService.js";
 import { formatCurrency, debounce } from "../utils/helpers.js";
 import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
@@ -208,6 +201,11 @@ function openDetailSheet(supplier) {
                 ${hasDues ? "Cannot Archive (Has Balance)" : "Archive Supplier"}
             </button>
             ${hasDues ? '<p class="text-[11px] text-stone-400 text-center">Settle the outstanding balance before archiving</p>' : '<p class="text-[11px] text-stone-400 text-center">Archived suppliers won\'t appear in lists</p>'}
+            <button class="sup-view-ledger w-full h-11 border border-amber-200 text-amber-700
+                hover:bg-amber-50 font-semibold rounded-lg text-sm transition-colors mt-1"
+                data-id="${supplier.id}">
+                View Account Statement
+            </button>
         </div>
     `;
   if (window.lucide) lucide.createIcons();
@@ -420,6 +418,13 @@ document.addEventListener("click", (e) => {
       t.classList.toggle("active", t.dataset.filter === viewState.activeFilter);
     });
     loadSuppliers();
+    return;
+  }
+
+  if (e.target.closest(".sup-view-ledger")) {
+    closeSheet();
+    const id = e.target.closest(".sup-view-ledger").dataset.id;
+    window.location.hash = `#supplier-ledger?id=${id}`;
     return;
   }
 });
