@@ -16,6 +16,10 @@ import { renderSuppliers } from "./views/suppliersView.js";
 import { renderSale } from "./views/saleView.js";
 import { renderPurchase } from "./views/purchaseView.js";
 import { renderDashboard } from "./views/dashboardView.js";
+import { renderReports } from "./views/reportsView.js";
+import { renderTransactionHistory } from "./views/transactionHistoryView.js";
+import { renderCashBook } from "./views/cashBookView.js";
+import { renderLedger } from "./views/ledgerView.js";
 
 const state = {
   settings: null,
@@ -256,6 +260,11 @@ function renderShell(appEl) {
                     h-12 px-3 rounded-lg hover:bg-stone-50 text-left">
                     <i data-lucide="wallet" class="w-5 h-5 text-stone-500"></i>
                     <span class="text-sm font-medium text-stone-800">Cash Book</span>
+                </button>
+                <button data-more="transactions" class="more-item w-full flex items-center gap-3
+                    h-12 px-3 rounded-lg hover:bg-stone-50 text-left">
+                    <i data-lucide="list" class="w-5 h-5 text-stone-500"></i>
+                    <span class="text-sm font-medium text-stone-800">Transactions</span>
                 </button>
                 <div class="border-t border-stone-100 my-1"></div>
                 <button data-more="settings" class="more-item w-full flex items-center gap-3
@@ -517,42 +526,14 @@ router.registerRoute("sale", renderSale);
 router.registerRoute("purchase", renderPurchase);
 router.registerRoute("customers", renderCustomers);
 router.registerRoute("suppliers", renderSuppliers);
-
-router.registerRoute("reports", (mount) =>
-  renderPlaceholder(mount, {
-    title: "Reports",
-    description: "View business reports and summaries.",
-    phase: "P7",
-    items: [
-      "Daily summary: sales, purchases, cash, credit, profit",
-      "Date range reports",
-      "Category-wise sales breakdown",
-      "Outstanding credits report — who owes what",
-    ],
-  }),
-);
-
-router.registerRoute("cash-book", (mount) =>
-  renderPlaceholder(mount, {
-    title: "Cash Book",
-    description: "Track cash flow in and out of the store.",
-    phase: "P7",
-    items: [
-      "Today's cash flow: opening balance, cash in, cash out, closing",
-      "Historical cash flow by date",
-      "Link each entry to its source transaction",
-    ],
-  }),
-);
-
+router.registerRoute("reports", renderReports);
+router.registerRoute("transactions", renderTransactionHistory);
+router.registerRoute("cash-book", renderCashBook);
+router.registerRoute("customer-ledger", renderLedger);
+router.registerRoute("supplier-ledger", renderLedger);
 router.registerRoute("settings", renderSettings);
 
-// ============================================================
-// INITIALIZATION
-// ============================================================
-
 (async function init() {
-  // Ensure feed categories exist in the database
   await seedCategories();
 
   const appEl = document.getElementById("app");
