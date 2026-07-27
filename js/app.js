@@ -15,6 +15,7 @@ import { renderCustomers } from "./views/customersView.js";
 import { renderSuppliers } from "./views/suppliersView.js";
 import { renderSale } from "./views/saleView.js";
 import { renderPurchase } from "./views/purchaseView.js";
+import { renderDashboard } from "./views/dashboardView.js";
 
 const state = {
   settings: null,
@@ -378,66 +379,6 @@ function renderPlaceholder(mount, { title, description, phase, items }) {
     `;
   if (window.lucide) lucide.createIcons();
 }
-
-// ============================================================
-// DASHBOARD VIEW
-// ============================================================
-
-function renderDashboard(mount) {
-  updateHeader(null);
-  updateNav("dashboard");
-  mount.innerHTML = `
-        <div class="p-4 space-y-5">
-            <div class="grid grid-cols-3 gap-3">
-                <div class="bg-white rounded-xl border border-stone-200 p-3 text-center">
-                    <p class="text-lg font-bold text-stone-900">৳0</p>
-                    <p class="text-[11px] text-stone-500 mt-0.5">Today's Sales</p>
-                </div>
-                <div class="bg-white rounded-xl border border-stone-200 p-3 text-center">
-                    <p class="text-lg font-bold text-stone-900">0</p>
-                    <p class="text-[11px] text-stone-500 mt-0.5">Sales Today</p>
-                </div>
-                <div class="bg-white rounded-xl border border-stone-200 p-3 text-center">
-                    <p class="text-lg font-bold text-stone-900">0</p>
-                    <p class="text-[11px] text-stone-500 mt-0.5">Low Stock</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Recent Transactions</h3>
-                <div class="text-center py-6">
-                    <i data-lucide="receipt" class="w-10 h-10 text-stone-300 mx-auto mb-2"></i>
-                    <p class="text-sm text-stone-400">No transactions yet</p>
-                </div>
-            </div>
-            <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Feed Categories</h3>
-                <div class="flex gap-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full" style="background:${CATEGORY_COLORS.poultry}"></div>
-                        <span class="text-sm text-stone-600">Poultry</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full" style="background:${CATEGORY_COLORS.fish}"></div>
-                        <span class="text-sm text-stone-600">Fish</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-3 h-3 rounded-full" style="background:${CATEGORY_COLORS.cow}"></div>
-                        <span class="text-sm text-stone-600">Cow</span>
-                    </div>
-                </div>
-            </div>
-            <div class="text-center">
-                <span class="inline-block px-3 py-1.5 bg-amber-50 text-amber-700
-                             text-xs font-semibold rounded-full">Dashboard stats built in P6</span>
-            </div>
-        </div>
-    `;
-  if (window.lucide) lucide.createIcons();
-}
-
-// ============================================================
-// SETTINGS VIEW
-// ============================================================
 
 function renderSettings(mount) {
   updateHeader("Settings");
