@@ -1,12 +1,3 @@
-/**
- * customerService.js — Customer management.
- * @implements P3
- *
- * CRITICAL: Balance is NEVER modified through this service.
- * Balance only changes via SaleService (credit) and payment recording (P4+).
- * Archive is BLOCKED if balance > 0 — can't hide someone who owes money.
- */
-
 import db from "../db/schema.js";
 import { uuid, nowISO } from "../utils/uuid.js";
 import { toBool } from "../utils/helpers.js";
@@ -128,6 +119,32 @@ const CustomerService = {
         syncedAt: null,
       });
       return { success: true };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
+  async getLedger(customerId, options = {}) {
+    try {
+      const customer = await db.customers.get(customerId);
+      if (!customer) return { success: false, error: "Customer not found" };
+
+      let entries = (await db.ledger_entries.toArray())
+        .filter(
+          (e) => e.entity_type === "CUSTOMER" && e.entity_id === customerId,
+        )
+        .sort(
+          (a, b) =>
+            a.entry_date.localeCompare(b.entry_date) ||
+            a.created_at.localeCompare(b.created_at),
+        );
+
+      if (options.fromDate)
+        entries = entries.filter((e) => e.entry_date >= options.fromDate);
+      if (options.toDate)
+        entries = entries.filter((e) => e.entry_date <= options.toDate);
+
+      return { success: true, data: { customer, entries } };
     } catch (e) {
       return { success: false, error: e.message };
     }
