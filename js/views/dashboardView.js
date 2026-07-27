@@ -48,11 +48,9 @@ async function loadTodaySummary() {
 
 async function loadRecentTransactions() {
   try {
-    const txns = await db.transactions
-      .orderBy("created_at")
-      .reverse()
-      .limit(5)
-      .toArray();
+    const txns = (await db.transactions.toArray())
+      .sort((a, b) => b.created_at.localeCompare(a.created_at))
+      .slice(0, 5);
 
     if (txns.length === 0) return [];
 
