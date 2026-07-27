@@ -1,13 +1,3 @@
-/**
- * customersView.js — Customer list, detail, add, edit, archive.
- *
- * Tap a card → detail sheet (name, phone, address, balance)
- * From detail → "Edit" switches sheet to form mode
- * From detail → "Archive" (blocked if balance > 0)
- *
- * Filter tabs: All | With Dues
- */
-
 import CustomerService from "../services/customerService.js";
 import { formatCurrency, debounce } from "../utils/helpers.js";
 import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
@@ -17,7 +7,7 @@ const viewState = {
   activeFilter: "all",
   searchTerm: "",
   selectedCustomer: null,
-  sheetMode: null, // 'detail' | 'form'
+  sheetMode: null,
   archiveTarget: null,
   loading: false,
 };
@@ -181,8 +171,6 @@ function renderCount() {
   el.textContent = n === 1 ? "1 customer" : `${n} customers`;
 }
 
-// --- DETAIL SHEET ---
-
 function openDetailSheet(customer) {
   viewState.selectedCustomer = customer;
   viewState.sheetMode = "detail";
@@ -213,6 +201,11 @@ function openDetailSheet(customer) {
                 ${hasDues ? "Cannot Archive (Has Dues)" : "Archive Customer"}
             </button>
             ${hasDues ? '<p class="text-[11px] text-stone-400 text-center">Settle the outstanding balance before archiving</p>' : '<p class="text-[11px] text-stone-400 text-center">Archived customers won\'t appear in lists</p>'}
+            <button class="cust-view-ledger w-full h-11 border border-amber-200 text-amber-700
+                hover:bg-amber-50 font-semibold rounded-lg text-sm transition-colors mt-1"
+                data-id="${customer.id}">
+                View Account Statement
+            </button>
         </div>
     `;
   if (window.lucide) lucide.createIcons();
@@ -440,6 +433,13 @@ document.addEventListener("click", (e) => {
       });
       loadCustomers();
     }
+    return;
+  }
+
+  if (e.target.closest(".cust-view-ledger")) {
+    closeSheet();
+    const id = e.target.closest(".cust-view-ledger").dataset.id;
+    window.location.hash = `#customer-ledger?id=${id}`;
     return;
   }
 });
