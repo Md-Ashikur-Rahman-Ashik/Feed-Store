@@ -49,13 +49,37 @@ async function loadCashBook() {
   body.innerHTML = `
         <div class="space-y-4">
             <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Cash Summary — ${formatDateLong(selectedDate)}</h3>
+                <h3 class="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                    <i data-lucide="wallet" class="w-4 h-4 text-amber-700"></i>
+                    Cash Summary — ${formatDateLong(selectedDate)}
+                </h3>
                 <div class="space-y-2 text-sm">
-                    <div class="flex justify-between"><span class="text-stone-500">Opening Balance</span><span class="font-medium text-stone-900">${formatCurrency(opening)}</span></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Cash In (+)</span><span class="font-medium text-green-700">+${formatCurrency(cashIn)}</span></div>
-                    <div class="flex justify-between"><span class="text-stone-500">Cash Out (-)</span><span class="font-medium text-red-600">-${formatCurrency(cashOut)}</span></div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500 flex items-center gap-1.5">
+                            <i data-lucide="flag" class="w-3.5 h-3.5 text-stone-400"></i>
+                            Opening Balance
+                        </span>
+                        <span class="font-medium text-stone-900">${formatCurrency(opening)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500 flex items-center gap-1.5">
+                            <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-green-500"></i>
+                            Cash In (+)
+                        </span>
+                        <span class="font-medium text-green-700">+${formatCurrency(cashIn)}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-stone-500 flex items-center gap-1.5">
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-red-500"></i>
+                            Cash Out (-)
+                        </span>
+                        <span class="font-medium text-red-600">-${formatCurrency(cashOut)}</span>
+                    </div>
                     <div class="flex justify-between pt-2 border-t border-stone-200">
-                        <span class="font-semibold text-stone-700">Closing Balance</span>
+                        <span class="font-semibold text-stone-700 flex items-center gap-1.5">
+                            <i data-lucide="landmark" class="w-3.5 h-3.5 text-stone-600"></i>
+                            Closing Balance
+                        </span>
                         <span class="font-bold text-stone-900 text-base">${formatCurrency(closing)}</span>
                     </div>
                 </div>
@@ -65,7 +89,10 @@ async function loadCashBook() {
               dayEntries.length > 0
                 ? `
             <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Entries</h3>
+                <h3 class="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                    <i data-lucide="list" class="w-4 h-4 text-amber-700"></i>
+                    Entries
+                </h3>
                 ${dayEntries
                   .map(
                     (e) => `
@@ -82,7 +109,11 @@ async function loadCashBook() {
                   )
                   .join("")}
             </div>`
-                : '<p class="text-center text-sm text-stone-400 py-4">No cash entries on this date</p>'
+                : `
+            <div class="text-center py-8">
+                <i data-lucide="file-x" class="w-10 h-10 text-stone-300 mx-auto mb-2"></i>
+                <p class="text-sm text-stone-400">No cash entries on this date</p>
+            </div>`
             }
         </div>
     `;

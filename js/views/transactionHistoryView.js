@@ -117,11 +117,15 @@ async function loadTransactions() {
     sMap[s.id] = s.name;
   });
 
-  count.textContent = `${txns.length} transaction${txns.length !== 1 ? "s" : ""}`;
+  count.innerHTML = `<i data-lucide="receipt" class="w-3 h-3 inline-block align-text-bottom text-stone-400 mr-0.5"></i> ${txns.length} transaction${txns.length !== 1 ? "s" : ""}`;
+  if (window.lucide) lucide.createIcons();
 
   if (txns.length === 0) {
-    list.innerHTML =
-      '<div class="text-center py-8"><p class="text-sm text-stone-400">No transactions found</p></div>';
+    list.innerHTML = `<div class="text-center py-8">
+              <i data-lucide="receipt" class="w-10 h-10 text-stone-300 mx-auto mb-2"></i>
+              <p class="text-sm text-stone-400">No transactions found</p>
+            </div>`;
+    if (window.lucide) lucide.createIcons();
     return;
   }
 

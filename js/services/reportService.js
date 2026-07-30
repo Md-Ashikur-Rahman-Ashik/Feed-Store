@@ -91,21 +91,21 @@ const ReportService = {
         .filter((s) => s.summary_date >= from && s.summary_date <= to)
         .sort((a, b) => a.summary_date.localeCompare(b.summary_date));
       const t = {
-        totalSales: 0,
-        totalPurchases: 0,
-        totalCashReceived: 0,
-        totalCreditGiven: 0,
-        totalCashPaid: 0,
-        totalCreditUsed: 0,
-        netSales: 0,
-        netPurchases: 0,
-        estimatedProfit: 0,
-        saleCount: 0,
-        purchaseCount: 0,
+        total_sales: 0,
+        total_purchases: 0,
+        total_cash_received: 0,
+        total_credit_given: 0,
+        total_cash_paid: 0,
+        total_credit_used: 0,
+        net_sales: 0,
+        net_purchases: 0,
+        estimated_profit: 0,
+        sale_count: 0,
+        purchase_count: 0,
       };
       for (const s of summaries) {
         for (const k of Object.keys(t)) {
-          if (k !== "dayCount") t[k] += s[k] || 0;
+          t[k] += s[k] || 0;
         }
       }
       return {

@@ -15,7 +15,7 @@
 
 import ProductService from "../services/productService.js";
 import db from "../db/schema.js";
-import { CATEGORY_COLORS } from "../config.js";
+import { CONFIG, CATEGORY_COLORS } from "../config.js";
 import {
   formatCurrency,
   formatNumber,
@@ -337,7 +337,8 @@ function renderCount() {
   const el = document.getElementById("p-count");
   if (!el) return;
   const n = viewState.products.length;
-  el.textContent = n === 1 ? "1 product" : `${n} products`;
+  el.innerHTML = `<i data-lucide="package" class="w-3 h-3 inline-block align-text-bottom text-stone-400 mr-0.5"></i> ${n === 1 ? "1 product" : `${n} products`}`;
+  if (window.lucide) lucide.createIcons();
 }
 
 // ============================================================
@@ -417,7 +418,7 @@ function renderFormBody(product) {
                 </label>
                 <div class="relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-stone-500
-                                 pointer-events-none">৳</span>
+                                 pointer-events-none">${CONFIG.CURRENCY}</span>
                     <input id="pf-cost" type="text" inputmode="decimal"
                         value="${product ? product.cost_price : ""}"
                         placeholder="0"
@@ -432,7 +433,7 @@ function renderFormBody(product) {
                 </label>
                 <div class="relative">
                     <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-stone-500
-                                 pointer-events-none">৳</span>
+                                 pointer-events-none">${CONFIG.CURRENCY}</span>
                     <input id="pf-selling" type="text" inputmode="decimal"
                         value="${product ? product.selling_price : ""}"
                         placeholder="0"

@@ -1,7 +1,7 @@
 import PurchaseService from "../services/purchaseService.js";
 import SupplierService from "../services/supplierService.js";
 import ProductService from "../services/productService.js";
-import { CATEGORY_COLORS } from "../config.js";
+import { CONFIG, CATEGORY_COLORS } from "../config.js";
 import { formatCurrency, formatNumber, debounce } from "../utils/helpers.js";
 import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
@@ -65,7 +65,10 @@ function buildShell() {
         <div id="pur-form" class="pb-24">
             <div class="p-4 pb-2">
                 <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-sm font-semibold text-stone-500">SUPPLIER</h2>
+                    <h2 class="text-sm font-semibold text-stone-500 flex items-center gap-1.5">
+                        <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+                        SUPPLIER
+                    </h2>
                     <button id="pur-clear-sup" class="hidden text-xs text-red-500 font-semibold
                         px-2 py-1 rounded hover:bg-red-50">Clear</button>
                 </div>
@@ -91,7 +94,10 @@ function buildShell() {
             <div class="mx-4 border-t border-stone-200"></div>
 
             <div class="p-4 pb-2">
-                <h2 class="text-sm font-semibold text-stone-500 mb-2">ITEMS RECEIVED</h2>
+                <h2 class="text-sm font-semibold text-stone-500 mb-2 flex items-center gap-1.5">
+                    <i data-lucide="package" class="w-3.5 h-3.5"></i>
+                    ITEMS RECEIVED
+                </h2>
                 <div id="pur-items-list"></div>
                 <div class="relative mt-2">
                     <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2
@@ -132,7 +138,7 @@ function buildShell() {
                        disabled:opacity-40 disabled:cursor-not-allowed
                        transition-colors active:scale-[0.98]"
                 style="background:#B45309;" disabled>
-                Complete Purchase · ৳0
+                Complete Purchase · ${CONFIG.CURRENCY}0
             </button>
         </div>
 
@@ -222,7 +228,13 @@ function clearSupplier() {
 function renderItemsList() {
   const el = document.getElementById("pur-items-list");
   if (S.items.length === 0) {
-    el.innerHTML = "";
+    el.innerHTML = `
+      <div class="text-center py-6">
+        <i data-lucide="search" class="w-8 h-8 text-stone-300 mx-auto mb-2"></i>
+        <p class="text-sm text-stone-400">Search and add products above</p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
     return;
   }
   el.innerHTML = S.items
@@ -299,7 +311,7 @@ function showAddForm(product) {
                                focus:border-amber-700" style="font-size:16px;">
                 </div>
                 <div class="flex-1">
-                    <label class="block text-[11px] font-medium text-stone-500 mb-1">Cost Price (৳)</label>
+                    <label class="block text-[11px] font-medium text-stone-500 mb-1">Cost Price (${CONFIG.CURRENCY})</label>
                     <input id="pur-add-price" type="text" inputmode="decimal"
                         value="${product.cost_price}"
                         class="w-full h-10 px-3 border border-stone-300 rounded-lg text-stone-900
@@ -412,7 +424,10 @@ function renderPayment() {
   const supplierMissing = needsSupplier && !S.selectedSupplier;
 
   el.innerHTML = `
-        <h2 class="text-sm font-semibold text-stone-500 mb-2">PAYMENT</h2>
+        <h2 class="text-sm font-semibold text-stone-500 mb-2 flex items-center gap-1.5">
+            <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+            PAYMENT
+        </h2>
         <div class="space-y-2 mb-3">
             <div class="flex justify-between text-sm">
                 <span class="text-stone-500">Subtotal</span>
@@ -421,7 +436,7 @@ function renderPayment() {
             <div class="flex items-center gap-2">
                 <span class="text-sm text-stone-500">Discount</span>
                 <div class="relative flex-1">
-                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-stone-400">৳</span>
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-stone-400">${CONFIG.CURRENCY}</span>
                     <input id="pur-discount" type="text" inputmode="decimal"
                         value="${S.discount || ""}" placeholder="0"
                         class="w-full h-8 pl-6 pr-2 border border-stone-200 rounded-md text-sm text-right
@@ -451,7 +466,7 @@ function renderPayment() {
             <div class="flex items-center gap-2 mb-2">
                 <span class="text-sm text-stone-600 whitespace-nowrap">Amount Paid</span>
                 <div class="relative flex-1">
-                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-stone-400">৳</span>
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-stone-400">${CONFIG.CURRENCY}</span>
                     <input id="pur-paid" type="text" inputmode="decimal"
                         value="${S.amountPaid || ""}" placeholder="0"
                         class="w-full h-10 pl-6 pr-2 border border-stone-300 rounded-lg text-sm

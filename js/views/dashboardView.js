@@ -203,15 +203,18 @@ function buildDashboard({
             <!-- Stat Cards -->
             <div class="grid grid-cols-3 gap-3">
                 <div class="bg-white rounded-xl border border-stone-200 p-3 text-center">
+                    <i data-lucide="trending-up" class="w-5 h-5 text-green-600 mx-auto mb-1"></i>
                     <p class="text-lg font-bold text-stone-900">${formatCurrency(totalSales)}</p>
                     <p class="text-[11px] text-stone-500 mt-0.5">Today's Sales</p>
                 </div>
                 <div class="bg-white rounded-xl border border-stone-200 p-3 text-center">
+                    <i data-lucide="shopping-cart" class="w-5 h-5 text-blue-500 mx-auto mb-1"></i>
                     <p class="text-lg font-bold text-stone-900">${salesCount}</p>
                     <p class="text-[11px] text-stone-500 mt-0.5">Sales Today</p>
                 </div>
                 <div class="bg-white rounded-xl border border-stone-200 p-3 text-center
                     ${lowStockCount > 0 ? "border-red-200 bg-red-50" : ""}">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 ${lowStockCount > 0 ? "text-red-500" : "text-stone-300"} mx-auto mb-1"></i>
                     <p class="text-lg font-bold ${lowStockCount > 0 ? "text-red-600" : "text-stone-900"}">${lowStockCount}</p>
                     <p class="text-[11px] ${lowStockCount > 0 ? "text-red-500" : "text-stone-500"} mt-0.5">Low Stock</p>
                 </div>
@@ -294,13 +297,16 @@ function buildTodayBreakdown({
 
   return `
         <div class="bg-white rounded-xl border border-stone-200 p-4 space-y-3">
-            <h3 class="text-sm font-semibold text-stone-700">Today's Breakdown</h3>
+            <h3 class="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-amber-700"></i>
+                    Today's Breakdown
+                </h3>
 
             <div class="space-y-2">
                 <!-- Sales bar -->
                 <div>
                     <div class="flex justify-between text-xs mb-1">
-                        <span class="text-stone-500">Sales ৳${formatNumber(totalSales)}</span>
+                        <span class="text-stone-500">Sales ${formatCurrency(totalSales)}</span>
                     </div>
                     <div class="h-2 bg-stone-100 rounded-full overflow-hidden">
                         <div class="h-full rounded-full" style="width:100%; background:#059669;"></div>
@@ -323,11 +329,11 @@ function buildTodayBreakdown({
                 }
 
                 ${
-                  estimatedProfit > 0
+                  estimatedProfit !== 0
                     ? `
                 <div class="flex justify-between text-sm pt-1 border-t border-stone-100">
                     <span class="text-stone-500">Est. Profit</span>
-                    <span class="font-semibold text-green-700">${formatCurrency(estimatedProfit)}</span>
+                    <span class="font-semibold ${estimatedProfit > 0 ? "text-green-700" : "text-red-600"}">${formatCurrency(estimatedProfit)}</span>
                 </div>
                 `
                     : ""
@@ -396,7 +402,10 @@ function buildRecentTransactions(txns) {
 
   return `
         <div class="bg-white rounded-xl border border-stone-200 p-4">
-            <h3 class="text-sm font-semibold text-stone-700 mb-2">Recent Transactions</h3>
+            <h3 class="text-sm font-semibold text-stone-700 mb-2 flex items-center gap-2">
+                    <i data-lucide="receipt" class="w-4 h-4 text-amber-700"></i>
+                    Recent Transactions
+                </h3>
             ${cards}
         </div>
     `;
@@ -424,7 +433,10 @@ function buildDebtors(debtors) {
   return `
         <div class="bg-white rounded-xl border border-stone-200 p-4">
             <div class="flex items-center justify-between mb-2">
-                <h3 class="text-sm font-semibold text-stone-700">Outstanding Credits</h3>
+                <h3 class="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-red-500"></i>
+                        Outstanding Credits
+                    </h3>
                 <span class="text-xs font-bold text-red-600">${formatCurrency(totalOwed)} total</span>
             </div>
             ${list}
@@ -464,7 +476,10 @@ function buildCategoryStock(categories) {
 
   return `
         <div class="bg-white rounded-xl border border-stone-200 p-4">
-            <h3 class="text-sm font-semibold text-stone-700 mb-3">Stock by Category</h3>
+            <h3 class="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                    <i data-lucide="package" class="w-4 h-4 text-amber-700"></i>
+                    Stock by Category
+                </h3>
             <div class="flex gap-3">${bars}</div>
         </div>
     `;

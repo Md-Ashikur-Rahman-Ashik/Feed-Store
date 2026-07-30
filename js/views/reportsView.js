@@ -61,6 +61,12 @@ async function renderDaily(el) {
   await loadDaily();
 }
 
+function profitColor(value) {
+  if (value > 0) return "text-green-700";
+  if (value < 0) return "text-red-600";
+  return "text-stone-900";
+}
+
 async function loadDaily() {
   const body = document.getElementById("rpt-daily-body");
   if (!body) return;
@@ -76,23 +82,40 @@ async function loadDaily() {
   body.innerHTML = `
         <div class="space-y-4">
             <div class="bg-white rounded-xl border border-stone-200 p-4 space-y-3">
-                <h3 class="text-sm font-semibold text-stone-700">Summary for ${formatDateLong(selectedDate)}</h3>
-                <div class="grid grid-cols-2 gap-3">
+                <h3 class="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 text-amber-700"></i>
+                    Summary for ${formatDateLong(selectedDate)}
+                </h3>
+                <div class="grid grid-cols-3 gap-2">
                     <div class="p-3 bg-green-50 rounded-lg text-center">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-green-600 mx-auto mb-1"></i>
                         <p class="text-lg font-bold text-green-700">${formatCurrency(s ? s.total_sales : 0)}</p>
                         <p class="text-[11px] text-green-600">Sales</p>
                     </div>
                     <div class="p-3 bg-blue-50 rounded-lg text-center">
+                        <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600 mx-auto mb-1"></i>
                         <p class="text-lg font-bold text-blue-700">${formatCurrency(s ? s.total_purchases : 0)}</p>
                         <p class="text-[11px] text-blue-600">Purchases</p>
                     </div>
                     <div class="p-3 bg-amber-50 rounded-lg text-center">
+                        <i data-lucide="wallet" class="w-4 h-4 text-amber-600 mx-auto mb-1"></i>
                         <p class="text-lg font-bold text-amber-700">${formatCurrency(s ? s.total_cash_received : 0)}</p>
                         <p class="text-[11px] text-amber-600">Cash Received</p>
                     </div>
                     <div class="p-3 bg-red-50 rounded-lg text-center">
+                        <i data-lucide="credit-card" class="w-4 h-4 text-red-500 mx-auto mb-1"></i>
                         <p class="text-lg font-bold text-red-600">${formatCurrency(s ? s.total_credit_given : 0)}</p>
                         <p class="text-[11px] text-red-500">Credit Given</p>
+                    </div>
+                    <div class="p-3 bg-purple-50 rounded-lg text-center">
+                        <i data-lucide="arrow-up-right" class="w-4 h-4 text-purple-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-purple-700">${formatCurrency(s ? s.total_cash_paid : 0)}</p>
+                        <p class="text-[11px] text-purple-600">Cash Paid</p>
+                    </div>
+                    <div class="p-3 bg-orange-50 rounded-lg text-center">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-orange-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-orange-600">${formatCurrency(s ? s.total_credit_used : 0)}</p>
+                        <p class="text-[11px] text-orange-500">Credit Used</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center text-sm">
@@ -105,7 +128,7 @@ async function loadDaily() {
                         <p class="text-[10px] text-stone-500">Purchases</p>
                     </div>
                     <div class="p-2 bg-stone-50 rounded-lg">
-                        <p class="font-bold ${s && s.estimated_profit > 0 ? "text-green-700" : "text-stone-900"}">${formatCurrency(s ? s.estimated_profit : 0)}</p>
+                        <p class="font-bold ${s ? profitColor(s.estimated_profit) : "text-stone-900"}">${formatCurrency(s ? s.estimated_profit : 0)}</p>
                         <p class="text-[10px] text-stone-500">Est. Profit</p>
                     </div>
                 </div>
@@ -115,7 +138,10 @@ async function loadDaily() {
               d.categoryBreakdown.length > 0
                 ? `
             <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Category Breakdown</h3>
+                <h3 class="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4 text-amber-700"></i>
+                    Category Breakdown
+                </h3>
                 ${d.categoryBreakdown
                   .map(
                     (c) => `
@@ -133,7 +159,10 @@ async function loadDaily() {
             }
 
             <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Cash Position</h3>
+                <h3 class="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                    <i data-lucide="banknote" class="w-4 h-4 text-amber-700"></i>
+                    Cash Position
+                </h3>
                 <div class="flex justify-between text-sm mb-2">
                     <span class="text-stone-500">Cash In</span>
                     <span class="font-medium text-green-700">+${formatCurrency(d.cashIn)}</span>
@@ -148,9 +177,18 @@ async function loadDaily() {
                 </div>
             </div>
 
-            ${!hasData ? '<p class="text-center text-sm text-stone-400 py-4">No transactions on this date</p>' : ""}
+            ${
+              !hasData
+                ? `
+            <div class="text-center py-8">
+                <i data-lucide="file-x" class="w-10 h-10 text-stone-300 mx-auto mb-2"></i>
+                <p class="text-sm text-stone-400">No transactions on this date</p>
+            </div>`
+                : ""
+            }
         </div>
     `;
+  if (window.lucide) lucide.createIcons();
 }
 
 async function renderRange(el) {
@@ -182,36 +220,53 @@ async function loadRange() {
   body.innerHTML = `
         <div class="space-y-4">
             <div class="bg-white rounded-xl border border-stone-200 p-4 space-y-3">
-                <h3 class="text-sm font-semibold text-stone-700">${totals.dayCount} Day${totals.dayCount !== 1 ? "s" : ""} Summary</h3>
-                <div class="grid grid-cols-2 gap-3">
+                <h3 class="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                    <i data-lucide="calendar-range" class="w-4 h-4 text-amber-700"></i>
+                    ${totals.dayCount} Day${totals.dayCount !== 1 ? "s" : ""} Summary
+                </h3>
+                <div class="grid grid-cols-3 gap-2">
                     <div class="p-3 bg-green-50 rounded-lg text-center">
-                        <p class="text-lg font-bold text-green-700">${formatCurrency(totals.totalSales)}</p>
+                        <i data-lucide="trending-up" class="w-4 h-4 text-green-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-green-700">${formatCurrency(totals.total_sales)}</p>
                         <p class="text-[11px] text-green-600">Total Sales</p>
                     </div>
                     <div class="p-3 bg-blue-50 rounded-lg text-center">
-                        <p class="text-lg font-bold text-blue-700">${formatCurrency(totals.totalPurchases)}</p>
+                        <i data-lucide="shopping-cart" class="w-4 h-4 text-blue-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-blue-700">${formatCurrency(totals.total_purchases)}</p>
                         <p class="text-[11px] text-blue-600">Total Purchases</p>
                     </div>
                     <div class="p-3 bg-amber-50 rounded-lg text-center">
-                        <p class="text-lg font-bold text-amber-700">${formatCurrency(totals.totalCashReceived)}</p>
+                        <i data-lucide="wallet" class="w-4 h-4 text-amber-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-amber-700">${formatCurrency(totals.total_cash_received)}</p>
                         <p class="text-[11px] text-amber-600">Cash Received</p>
                     </div>
                     <div class="p-3 bg-red-50 rounded-lg text-center">
-                        <p class="text-lg font-bold text-red-600">${formatCurrency(totals.totalCreditGiven)}</p>
+                        <i data-lucide="credit-card" class="w-4 h-4 text-red-500 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-red-600">${formatCurrency(totals.total_credit_given)}</p>
                         <p class="text-[11px] text-red-500">Credit Given</p>
+                    </div>
+                    <div class="p-3 bg-purple-50 rounded-lg text-center">
+                        <i data-lucide="arrow-up-right" class="w-4 h-4 text-purple-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-purple-700">${formatCurrency(totals.total_cash_paid)}</p>
+                        <p class="text-[11px] text-purple-600">Cash Paid</p>
+                    </div>
+                    <div class="p-3 bg-orange-50 rounded-lg text-center">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-orange-600 mx-auto mb-1"></i>
+                        <p class="text-lg font-bold text-orange-600">${formatCurrency(totals.total_credit_used)}</p>
+                        <p class="text-[11px] text-orange-500">Credit Used</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center text-sm">
                     <div class="p-2 bg-stone-50 rounded-lg">
-                        <p class="font-bold text-stone-900">${totals.saleCount}</p>
+                        <p class="font-bold text-stone-900">${totals.sale_count}</p>
                         <p class="text-[10px] text-stone-500">Sales</p>
                     </div>
                     <div class="p-2 bg-stone-50 rounded-lg">
-                        <p class="font-bold text-stone-900">${totals.purchaseCount}</p>
+                        <p class="font-bold text-stone-900">${totals.purchase_count}</p>
                         <p class="text-[10px] text-stone-500">Purchases</p>
                     </div>
                     <div class="p-2 bg-stone-50 rounded-lg">
-                        <p class="font-bold ${totals.estimatedProfit > 0 ? "text-green-700" : "text-stone-900"}">${formatCurrency(totals.estimatedProfit)}</p>
+                        <p class="font-bold ${profitColor(totals.estimated_profit)}">${formatCurrency(totals.estimated_profit)}</p>
                         <p class="text-[10px] text-stone-500">Est. Profit</p>
                     </div>
                 </div>
@@ -220,27 +275,38 @@ async function loadRange() {
               summaries.length > 0
                 ? `
             <div class="bg-white rounded-xl border border-stone-200 p-4">
-                <h3 class="text-sm font-semibold text-stone-700 mb-3">Day by Day</h3>
+                <h3 class="text-sm font-semibold text-stone-700 mb-3 flex items-center gap-2">
+                    <i data-lucide="list" class="w-4 h-4 text-amber-700"></i>
+                    Day by Day
+                </h3>
+                <div class="flex items-center justify-between py-2 border-b border-stone-200 text-xs font-semibold text-stone-500 uppercase tracking-wider">
+                    <span>Date</span>
+                    <span>Sales</span>
+                    <span>Credit</span>
+                    <span>Profit</span>
+                </div>
                 ${summaries
                   .map(
                     (s) => `
                     <div class="flex items-center justify-between py-2 border-b border-stone-100 last:border-0 text-sm">
-                        <span class="text-stone-700">${formatDateShort(s.summary_date)}</span>
+                        <span class="text-stone-700 text-xs">${formatDateShort(s.summary_date)}</span>
                         <span class="font-medium text-green-700">${formatCurrency(s.total_sales)}</span>
                         <span class="font-medium text-red-500">${formatCurrency(s.total_credit_given)}</span>
-                        <span class="font-bold ${s.estimated_profit > 0 ? "text-green-700" : "text-stone-900"}">${formatCurrency(s.estimated_profit)}</span>
-                    </div>
-                    <div class="flex justify-between text-[10px] text-stone-400 -mt-1 mb-2 pb-2 border-b border-stone-50 last:border-0">
-                        <span></span><span>Sales</span><span>Credit</span><span>Profit</span>
+                        <span class="font-bold ${profitColor(s.estimated_profit)}">${formatCurrency(s.estimated_profit)}</span>
                     </div>
                 `,
                   )
                   .join("")}
             </div>`
-                : '<p class="text-center text-sm text-stone-400 py-4">No data in this range</p>'
+                : `
+            <div class="text-center py-8">
+                <i data-lucide="file-x" class="w-10 h-10 text-stone-300 mx-auto mb-2"></i>
+                <p class="text-sm text-stone-400">No data in this range</p>
+            </div>`
             }
         </div>
     `;
+  if (window.lucide) lucide.createIcons();
 }
 
 async function renderCredits(el) {
@@ -257,12 +323,19 @@ async function renderCredits(el) {
   body.innerHTML = `
         <div class="space-y-4">
             <div class="flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-stone-700">All Outstanding Credits</h3>
+                <h3 class="text-sm font-semibold text-stone-700 flex items-center gap-2">
+                    <i data-lucide="users" class="w-4 h-4 text-red-500"></i>
+                    All Outstanding Credits
+                </h3>
                 <span class="text-sm font-bold text-red-600">${formatCurrency(totalOwed)}</span>
             </div>
             ${
               customers.length === 0
-                ? '<p class="text-center text-sm text-stone-400 py-8">No outstanding credits</p>'
+                ? `
+            <div class="text-center py-8">
+                <i data-lucide="check-circle" class="w-10 h-10 text-green-300 mx-auto mb-2"></i>
+                <p class="text-sm text-stone-400">No outstanding credits</p>
+            </div>`
                 : customers
                     .map(
                       (c) => `

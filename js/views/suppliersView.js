@@ -141,9 +141,14 @@ function renderList() {
         <div class="supplier-card bg-white rounded-xl border border-stone-200 p-3.5
                     active:bg-stone-50 cursor-pointer transition-colors" data-id="${s.id}">
             <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-sm font-semibold text-stone-900 truncate">${escapeHtml(s.name)}</h3>
-                    ${s.phone ? `<p class="text-xs text-stone-500 mt-0.5">${escapeHtml(s.phone)}</p>` : ""}
+                <div class="flex items-center gap-3 min-w-0 flex-1">
+                    <div class="w-8 h-8 rounded-full ${hasDues ? "bg-red-100" : "bg-amber-100"} flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="truck" class="w-4 h-4 ${hasDues ? "text-red-500" : "text-amber-600"}"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-sm font-semibold text-stone-900 truncate">${escapeHtml(s.name)}</h3>
+                        ${s.phone ? `<p class="text-xs text-stone-500 mt-0.5">${escapeHtml(s.phone)}</p>` : ""}
+                    </div>
                 </div>
                 <div class="text-right flex-shrink-0">
                     <span class="text-sm font-bold ${hasDues ? "text-red-600" : "text-stone-400"}">
@@ -155,6 +160,8 @@ function renderList() {
         </div>`;
     })
     .join("");
+
+  if (window.lucide) lucide.createIcons();
 
   listEl.querySelectorAll(".supplier-card").forEach((card) => {
     card.addEventListener("click", () => {
@@ -168,7 +175,8 @@ function renderCount() {
   const el = document.getElementById("s-count");
   if (!el) return;
   const n = viewState.suppliers.length;
-  el.textContent = n === 1 ? "1 supplier" : `${n} suppliers`;
+  el.innerHTML = `<i data-lucide="truck" class="w-3 h-3 inline-block align-text-bottom text-stone-400 mr-0.5"></i> ${n === 1 ? "1 supplier" : `${n} suppliers`}`;
+  if (window.lucide) lucide.createIcons();
 }
 
 function openDetailSheet(supplier) {
