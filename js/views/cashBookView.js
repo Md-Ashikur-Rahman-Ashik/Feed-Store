@@ -29,6 +29,7 @@ export async function renderCashBook(mount) {
       }
     });
   });
+}
 
 
 async function loadCashBook() {

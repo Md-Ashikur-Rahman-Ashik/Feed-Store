@@ -74,6 +74,7 @@ export async function renderSuppliers(mount) {
       }
     });
   });
+}
 
 
 async function loadSuppliers() {

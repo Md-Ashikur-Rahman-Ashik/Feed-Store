@@ -217,6 +217,7 @@ export async function renderSale(mount) {
       }
     });
   });
+}
 
 
 function resetState() {

@@ -81,6 +81,7 @@ export async function renderCustomers(mount) {
       }
     });
   });
+}
 
 
 async function loadCustomers() {

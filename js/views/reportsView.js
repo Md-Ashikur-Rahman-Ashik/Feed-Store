@@ -49,6 +49,7 @@ export async function renderReports(mount) {
       }
     });
   });
+}
 
 
 function buildShell() {

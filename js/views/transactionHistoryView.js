@@ -53,6 +53,7 @@ export async function renderTransactionHistory(mount) {
       }
     });
   });
+}
 
 
 function buildShell() {
