@@ -8,6 +8,8 @@
  *   All other routes → replaces only #view-mount innerHTML (shell stays)
  */
 
+import { cleanupViewScopes } from "./views/viewHelpers.js";
+
 const routes = {};
 let currentRoute = null;
 let mountPoint = null;
@@ -42,6 +44,10 @@ export function initRouter(initialMount, guard) {
   async function handleRoute() {
     const hash = getCurrentRoute();
 
+    // Run previous cleanup before any route switch (defensive — ensures listeners are
+    // removed even when navigating to #login, which has an early return below)
+    cleanupViewScopes();
+
     // LOGIN ROUTE: full page replacement, no shell
     if (hash === "login") {
       if (guardFn && guardFn()) {
@@ -64,12 +70,15 @@ export function initRouter(initialMount, guard) {
       return;
     }
 
-    // SAME ROUTE: skip re-render
-    if (hash === currentRoute) return;
+    // SAME ROUTE: re-render to re-register listeners after cleanup
+    // (don't bail out early — cleanup already ran above, the handler must be called
+    //  again so views can register fresh AbortController listeners)
     currentRoute = hash;
 
     // NORMAL ROUTE: render into view-mount only
-    const handler = routes[hash];
+    // Strip query params to find the base route handler (e.g., "customer-ledger?id=5" → "customer-ledger")
+    const baseRoute = hash.split("?")[0];
+    const handler = routes[baseRoute];
     if (handler) {
       mountPoint.innerHTML = "";
       await handler(mountPoint);

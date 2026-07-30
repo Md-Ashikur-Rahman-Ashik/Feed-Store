@@ -5,8 +5,7 @@
  * without circular imports.
  */
 
-import { showToast as _showToast } from "./viewHelpers.js";
-import { CONFIG, CATEGORY_COLORS } from "../config.js";
+import { CONFIG } from "../config.js";
 
 let _settings = null;
 
@@ -44,6 +43,64 @@ export function updateNav(activeRoute) {
     btn.classList.toggle("text-amber-700", isActive);
     btn.classList.toggle("text-stone-400", !isActive);
   });
+}
+
+/** @type {Array} Active listener scopes registered by createListenerScope(). */
+let _activeScopes = [];
+
+/**
+ * Create a scoped listener container that auto-registers for cleanup.
+ *
+ * Usage:
+ *   const scope = createListenerScope();
+ *   scope.on("click", handler);
+ *   scope.on("input", handler);
+ *   // No need to return anything — the router calls cleanupViewScopes() automatically
+ *
+ * @returns {{ signal: AbortSignal, on: Function }}
+ */
+export function createListenerScope() {
+  const ac = new AbortController();
+  const { signal } = ac;
+  const scope = {
+    signal,
+    on(event, handler, options) {
+      document.addEventListener(event, handler, { ...options, signal });
+      return this;
+    },
+    /** @private Called by cleanupViewScopes */
+    _cleanup() {
+      ac.abort();
+    },
+  };
+  _activeScopes.push(scope);
+  return scope;
+}
+
+/**
+ * Register listeners for the current mount cycle.
+ * The callback receives `{ on, signal }` for adding scoped event listeners.
+ * The scope is auto-registered for cleanup — the router calls
+ * cleanupViewScopes() before each route switch.
+ *
+ * Usage:
+ *   useMountEffect(({ on, signal }) => {
+ *     on("click", handler);
+ *     on("input", (e) => { debounce(fn, 250, signal)(); });
+ *   });
+ */
+export function useMountEffect(setup) {
+  const scope = createListenerScope();
+  setup(scope);
+}
+
+/**
+ * Clean up all registered listener scopes.
+ * Called by the router before rendering a new route.
+ */
+export function cleanupViewScopes() {
+  _activeScopes.forEach((s) => s._cleanup());
+  _activeScopes = [];
 }
 
 /** Show a toast notification. Appended to body for reliable fixed positioning. */

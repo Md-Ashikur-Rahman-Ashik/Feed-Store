@@ -1,6 +1,6 @@
 import SupplierService from "../services/supplierService.js";
-import { formatCurrency, debounce } from "../utils/helpers.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { formatCurrency, debounce, escapeHtml } from "../utils/helpers.js";
+import { useMountEffect, updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
 const viewState = {
   suppliers: [],
@@ -22,7 +22,59 @@ export async function renderSuppliers(mount) {
   viewState.sheetMode = null;
   mount.innerHTML = buildShell();
   await loadSuppliers();
-}
+
+  useMountEffect(({ on, signal }) => {
+    on("click", (e) => {
+      if (e.target.closest("#s-fab")) {
+        e.preventDefault();
+        openAddSheet();
+        return;
+      }
+      if (e.target.closest("#s-sheet-overlay")) {
+        closeSheet();
+        return;
+      }
+      if (e.target.closest("#s-archive-cancel")) {
+        closeArchiveModal();
+        return;
+      }
+      if (e.target.closest("#s-archive-confirm")) {
+        confirmArchive();
+        return;
+      }
+      if (e.target.id === "s-archive-modal") {
+        closeArchiveModal();
+        return;
+      }
+
+      const tab = e.target.closest(".s-filter-tab");
+      if (tab) {
+        viewState.activeFilter = tab.dataset.filter;
+        document.querySelectorAll(".s-filter-tab").forEach((t) => {
+          t.classList.toggle("active", t.dataset.filter === viewState.activeFilter);
+        });
+        loadSuppliers();
+        return;
+      }
+
+      if (e.target.closest(".sup-view-ledger")) {
+        closeSheet();
+        const id = e.target.closest(".sup-view-ledger").dataset.id;
+        window.location.hash = `#supplier-ledger?id=${id}`;
+        return;
+      }
+    });
+
+    on("input", (e) => {
+      if (e.target.id === "s-search") {
+        debounce(() => {
+          viewState.searchTerm = e.target.value;
+          loadSuppliers();
+        }, 250, signal)();
+      }
+    });
+  });
+
 
 async function loadSuppliers() {
   viewState.loading = true;
@@ -396,64 +448,3 @@ async function confirmArchive() {
   }
 }
 
-document.addEventListener("click", (e) => {
-  if (e.target.closest("#s-fab")) {
-    e.preventDefault();
-    openAddSheet();
-    return;
-  }
-  if (e.target.closest("#s-sheet-overlay")) {
-    closeSheet();
-    return;
-  }
-  if (e.target.closest("#s-archive-cancel")) {
-    closeArchiveModal();
-    return;
-  }
-  if (e.target.closest("#s-archive-confirm")) {
-    confirmArchive();
-    return;
-  }
-  if (e.target.id === "s-archive-modal") {
-    closeArchiveModal();
-    return;
-  }
-
-  const tab = e.target.closest(".s-filter-tab");
-  if (tab) {
-    viewState.activeFilter = tab.dataset.filter;
-    document.querySelectorAll(".s-filter-tab").forEach((t) => {
-      t.classList.toggle("active", t.dataset.filter === viewState.activeFilter);
-    });
-    loadSuppliers();
-    return;
-  }
-
-  if (e.target.closest(".sup-view-ledger")) {
-    closeSheet();
-    const id = e.target.closest(".sup-view-ledger").dataset.id;
-    window.location.hash = `#supplier-ledger?id=${id}`;
-    return;
-  }
-});
-
-document.addEventListener("input", (e) => {
-  if (e.target.id === "s-search") {
-    debounce(() => {
-      viewState.searchTerm = e.target.value;
-      loadSuppliers();
-    }, 250)();
-  }
-});
-
-function escapeHtml(str) {
-  if (!str) return "";
-  const map = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => map[c]);
-}

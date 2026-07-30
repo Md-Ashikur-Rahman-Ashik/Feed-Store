@@ -1,9 +1,9 @@
 import PurchaseService from "../services/purchaseService.js";
 import SupplierService from "../services/supplierService.js";
 import ProductService from "../services/productService.js";
-import { CONFIG, CATEGORY_COLORS } from "../config.js";
-import { formatCurrency, formatNumber, debounce } from "../utils/helpers.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { CONFIG } from "../config.js";
+import { formatCurrency, formatNumber, debounce, escapeHtml } from "../utils/helpers.js";
+import { useMountEffect, updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
 // ============================================================
 // STATE
@@ -39,7 +39,142 @@ export async function renderPurchase(mount) {
   mount.innerHTML = buildShell();
   renderPayment();
   renderSummary();
-}
+
+  useMountEffect(({ on, signal }) => {
+    on("click", (e) => {
+      if (S.mode !== "form") {
+        if (e.target.closest("#pur-new-btn")) {
+          handleNewPurchase();
+          return;
+        }
+        if (e.target.closest("#pur-back-home")) {
+          window.location.hash = "#dashboard";
+          return;
+        }
+        return;
+      }
+
+      if (e.target.closest("#pur-clear-sup")) {
+        clearSupplier();
+        return;
+      }
+
+      const supItem = e.target.closest(".sup-drop-item");
+      if (supItem) {
+        const s = S.supplierResults.find((x) => x.id === supItem.dataset.id);
+        if (s) selectSupplier(s);
+        return;
+      }
+
+      const prodItem = e.target.closest(".pur-prod-drop-item");
+      if (prodItem) {
+        const p = S.productResults.find((x) => x.id === prodItem.dataset.id);
+        if (p) showAddForm(p);
+        return;
+      }
+
+      if (e.target.closest("#pur-cancel-add")) {
+        hideAddForm();
+        return;
+      }
+      if (e.target.closest("#pur-add-btn")) {
+        handleAddItem();
+        return;
+      }
+
+      const removeBtn = e.target.closest(".pur-remove-item");
+      if (removeBtn) {
+        removeItem(parseInt(removeBtn.dataset.idx));
+        return;
+      }
+
+      const payBtn = e.target.closest(".pur-pay-btn");
+      if (payBtn) {
+        S.paymentMethod = payBtn.dataset.method;
+        if (S.paymentMethod !== "PARTIAL") S.amountPaid = 0;
+        renderPayment();
+        renderSummary();
+        return;
+      }
+
+      if (e.target.closest("#pur-complete-btn")) {
+        handleCompletePurchase();
+        return;
+      }
+
+      if (
+        !e.target.closest("#pur-sup-search") &&
+        !e.target.closest("#pur-sup-drop")
+      ) {
+        const d = document.getElementById("pur-sup-drop");
+        if (d) d.classList.add("hidden");
+      }
+      if (
+        !e.target.closest("#pur-prod-search") &&
+        !e.target.closest("#pur-prod-drop") &&
+        !e.target.closest("#pur-add-form")
+      ) {
+        const d = document.getElementById("pur-prod-drop");
+        if (d) d.classList.add("hidden");
+      }
+    });
+
+    on("input", (e) => {
+      if (S.mode !== "form") return;
+
+      if (e.target.id === "pur-sup-search") {
+        debounce(async () => {
+          const term = e.target.value.trim();
+          if (term.length === 0) {
+            renderSupplierDropdown([]);
+            return;
+          }
+          const result = await SupplierService.getAll({
+            search: term,
+            activeOnly: true,
+          });
+          if (result.success) {
+            S.supplierResults = result.data;
+            renderSupplierDropdown(result.data);
+          }
+        }, 200, signal)();
+        return;
+      }
+
+      if (e.target.id === "pur-prod-search") {
+        debounce(async () => {
+          const term = e.target.value.trim();
+          if (term.length === 0) {
+            renderProductDropdown([]);
+            return;
+          }
+          const result = await ProductService.getAll({
+            search: term,
+            activeOnly: true,
+          });
+          if (result.success) {
+            S.productResults = result.data;
+            renderProductDropdown(result.data);
+          }
+        }, 200, signal)();
+        return;
+      }
+
+      if (e.target.id === "pur-discount") {
+        S.discount = e.target.value;
+        renderPayment();
+        renderSummary();
+        return;
+      }
+      if (e.target.id === "pur-paid") {
+        S.amountPaid = e.target.value;
+        renderPayment();
+        renderSummary();
+        return;
+      }
+    });
+  });
+
 
 function resetState() {
   S.mode = "form";
@@ -681,151 +816,4 @@ function handleNewPurchase() {
   if (notesEl) notesEl.value = "";
 }
 
-// ============================================================
-// EVENT DELEGATION
-// ============================================================
 
-document.addEventListener("click", (e) => {
-  if (S.mode !== "form") {
-    if (e.target.closest("#pur-new-btn")) {
-      handleNewPurchase();
-      return;
-    }
-    if (e.target.closest("#pur-back-home")) {
-      window.location.hash = "#dashboard";
-      return;
-    }
-    return;
-  }
-
-  if (e.target.closest("#pur-clear-sup")) {
-    clearSupplier();
-    return;
-  }
-
-  const supItem = e.target.closest(".sup-drop-item");
-  if (supItem) {
-    const s = S.supplierResults.find((x) => x.id === supItem.dataset.id);
-    if (s) selectSupplier(s);
-    return;
-  }
-
-  const prodItem = e.target.closest(".pur-prod-drop-item");
-  if (prodItem) {
-    const p = S.productResults.find((x) => x.id === prodItem.dataset.id);
-    if (p) showAddForm(p);
-    return;
-  }
-
-  if (e.target.closest("#pur-cancel-add")) {
-    hideAddForm();
-    return;
-  }
-  if (e.target.closest("#pur-add-btn")) {
-    handleAddItem();
-    return;
-  }
-
-  const removeBtn = e.target.closest(".pur-remove-item");
-  if (removeBtn) {
-    removeItem(parseInt(removeBtn.dataset.idx));
-    return;
-  }
-
-  const payBtn = e.target.closest(".pur-pay-btn");
-  if (payBtn) {
-    S.paymentMethod = payBtn.dataset.method;
-    if (S.paymentMethod !== "PARTIAL") S.amountPaid = 0;
-    renderPayment();
-    renderSummary();
-    return;
-  }
-
-  if (e.target.closest("#pur-complete-btn")) {
-    handleCompletePurchase();
-    return;
-  }
-
-  if (
-    !e.target.closest("#pur-sup-search") &&
-    !e.target.closest("#pur-sup-drop")
-  ) {
-    const d = document.getElementById("pur-sup-drop");
-    if (d) d.classList.add("hidden");
-  }
-  if (
-    !e.target.closest("#pur-prod-search") &&
-    !e.target.closest("#pur-prod-drop") &&
-    !e.target.closest("#pur-add-form")
-  ) {
-    const d = document.getElementById("pur-prod-drop");
-    if (d) d.classList.add("hidden");
-  }
-});
-
-document.addEventListener("input", (e) => {
-  if (S.mode !== "form") return;
-
-  if (e.target.id === "pur-sup-search") {
-    debounce(async () => {
-      const term = e.target.value.trim();
-      if (term.length === 0) {
-        renderSupplierDropdown([]);
-        return;
-      }
-      const result = await SupplierService.getAll({
-        search: term,
-        activeOnly: true,
-      });
-      if (result.success) {
-        S.supplierResults = result.data;
-        renderSupplierDropdown(result.data);
-      }
-    }, 200)();
-    return;
-  }
-
-  if (e.target.id === "pur-prod-search") {
-    debounce(async () => {
-      const term = e.target.value.trim();
-      if (term.length === 0) {
-        renderProductDropdown([]);
-        return;
-      }
-      const result = await ProductService.getAll({
-        search: term,
-        activeOnly: true,
-      });
-      if (result.success) {
-        S.productResults = result.data;
-        renderProductDropdown(result.data);
-      }
-    }, 200)();
-    return;
-  }
-
-  if (e.target.id === "pur-discount") {
-    S.discount = e.target.value;
-    renderPayment();
-    renderSummary();
-    return;
-  }
-  if (e.target.id === "pur-paid") {
-    S.amountPaid = e.target.value;
-    renderPayment();
-    renderSummary();
-    return;
-  }
-});
-
-function escapeHtml(str) {
-  if (!str) return "";
-  const map = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => map[c]);
-}

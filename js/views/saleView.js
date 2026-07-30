@@ -16,14 +16,13 @@ import SaleService from "../services/saleService.js";
 import CustomerService from "../services/customerService.js";
 import ProductService from "../services/productService.js";
 import db from "../db/schema.js";
-import { CATEGORY_COLORS } from "../config.js";
 import {
   formatCurrency,
   formatNumber,
   debounce,
-  toBool,
+  escapeHtml,
 } from "../utils/helpers.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { useMountEffect, updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
 // ============================================================
 // STATE
@@ -65,7 +64,160 @@ export async function renderSale(mount) {
   mount.innerHTML = buildShell();
   renderPayment();
   renderSummary();
-}
+
+  useMountEffect(({ on, signal }) => {
+    on("click", (e) => {
+      // --- Sale form only ---
+      if (S.mode !== "form") {
+        // Success screen buttons
+        if (e.target.closest("#sale-new-btn")) {
+          handleNewSale();
+          return;
+        }
+        if (e.target.closest("#sale-back-home")) {
+          window.location.hash = "#dashboard";
+          return;
+        }
+        return;
+      }
+
+      // Clear customer
+      if (e.target.closest("#sale-clear-cust")) {
+        clearCustomer();
+        return;
+      }
+
+      // Customer dropdown item
+      const custItem = e.target.closest(".cust-drop-item");
+      if (custItem) {
+        const c = S.customerResults.find((x) => x.id === custItem.dataset.id);
+        if (c) selectCustomer(c);
+        return;
+      }
+
+      // Product dropdown item
+      const prodItem = e.target.closest(".prod-drop-item");
+      if (prodItem) {
+        const p = S.productResults.find((x) => x.id === prodItem.dataset.id);
+        if (p) showAddForm(p);
+        return;
+      }
+
+      // Cancel add form
+      if (e.target.closest("#sale-cancel-add")) {
+        hideAddForm();
+        return;
+      }
+
+      // Add item button
+      if (e.target.closest("#sale-add-btn")) {
+        handleAddItem();
+        return;
+      }
+
+      // Remove item
+      const removeBtn = e.target.closest(".sale-remove-item");
+      if (removeBtn) {
+        removeItem(parseInt(removeBtn.dataset.idx));
+        return;
+      }
+
+      // Payment method buttons
+      const payBtn = e.target.closest(".pay-btn");
+      if (payBtn) {
+        S.paymentMethod = payBtn.dataset.method;
+        if (S.paymentMethod !== "PARTIAL") S.amountPaid = 0;
+        renderPayment();
+        renderSummary();
+        return;
+      }
+
+      // Complete sale
+      if (e.target.closest("#sale-complete-btn")) {
+        handleCompleteSale();
+        return;
+      }
+
+      // Close dropdowns on outside click
+      if (
+        !e.target.closest("#sale-cust-search") &&
+        !e.target.closest("#sale-cust-drop")
+      ) {
+        S.showCustDrop = false;
+        const d = document.getElementById("sale-cust-drop");
+        if (d) d.classList.add("hidden");
+      }
+      if (
+        !e.target.closest("#sale-prod-search") &&
+        !e.target.closest("#sale-prod-drop") &&
+        !e.target.closest("#sale-add-form")
+      ) {
+        S.showProdDrop = false;
+        const d = document.getElementById("sale-prod-drop");
+        if (d) d.classList.add("hidden");
+      }
+    });
+
+    // Input handlers
+    on("input", (e) => {
+      if (S.mode !== "form") return;
+
+      if (e.target.id === "sale-cust-search") {
+        debounce(async () => {
+          const term = e.target.value.trim();
+          if (term.length === 0) {
+            S.customerResults = [];
+            renderCustomerDropdown([]);
+            return;
+          }
+          const result = await CustomerService.getAll({
+            search: term,
+            activeOnly: true,
+          });
+          if (result.success) {
+            S.customerResults = result.data;
+            renderCustomerDropdown(result.data);
+          }
+        }, 200, signal)();
+        return;
+      }
+
+      if (e.target.id === "sale-prod-search") {
+        debounce(async () => {
+          const term = e.target.value.trim();
+          if (term.length === 0) {
+            S.productResults = [];
+            renderProductDropdown([]);
+            return;
+          }
+          const result = await ProductService.getAll({
+            search: term,
+            activeOnly: true,
+          });
+          if (result.success) {
+            S.productResults = result.data;
+            renderProductDropdown(result.data);
+          }
+        }, 200, signal)();
+        return;
+      }
+
+      if (e.target.id === "sale-discount") {
+        S.discount = e.target.value;
+        renderPayment();
+        renderSummary();
+        return;
+      }
+
+      if (e.target.id === "sale-paid") {
+        S.amountPaid = e.target.value;
+        renderPayment();
+        renderSummary();
+        return;
+      }
+    });
+  });
+
 
 function resetState() {
   S.mode = "form";
@@ -736,173 +888,3 @@ function handleNewSale() {
   if (notesEl) notesEl.value = "";
 }
 
-// ============================================================
-// EVENT DELEGATION
-// ============================================================
-
-document.addEventListener("click", (e) => {
-  // --- Sale form only ---
-  if (S.mode !== "form") {
-    // Success screen buttons
-    if (e.target.closest("#sale-new-btn")) {
-      handleNewSale();
-      return;
-    }
-    if (e.target.closest("#sale-back-home")) {
-      window.location.hash = "#dashboard";
-      return;
-    }
-    return;
-  }
-
-  // Clear customer
-  if (e.target.closest("#sale-clear-cust")) {
-    clearCustomer();
-    return;
-  }
-
-  // Customer dropdown item
-  const custItem = e.target.closest(".cust-drop-item");
-  if (custItem) {
-    const c = S.customerResults.find((x) => x.id === custItem.dataset.id);
-    if (c) selectCustomer(c);
-    return;
-  }
-
-  // Product dropdown item
-  const prodItem = e.target.closest(".prod-drop-item");
-  if (prodItem) {
-    const p = S.productResults.find((x) => x.id === prodItem.dataset.id);
-    if (p) showAddForm(p);
-    return;
-  }
-
-  // Cancel add form
-  if (e.target.closest("#sale-cancel-add")) {
-    hideAddForm();
-    return;
-  }
-
-  // Add item button
-  if (e.target.closest("#sale-add-btn")) {
-    handleAddItem();
-    return;
-  }
-
-  // Remove item
-  const removeBtn = e.target.closest(".sale-remove-item");
-  if (removeBtn) {
-    removeItem(parseInt(removeBtn.dataset.idx));
-    return;
-  }
-
-  // Payment method buttons
-  const payBtn = e.target.closest(".pay-btn");
-  if (payBtn) {
-    S.paymentMethod = payBtn.dataset.method;
-    if (S.paymentMethod !== "PARTIAL") S.amountPaid = 0;
-    renderPayment();
-    renderSummary();
-    return;
-  }
-
-  // Complete sale
-  if (e.target.closest("#sale-complete-btn")) {
-    handleCompleteSale();
-    return;
-  }
-
-  // Close dropdowns on outside click
-  if (
-    !e.target.closest("#sale-cust-search") &&
-    !e.target.closest("#sale-cust-drop")
-  ) {
-    S.showCustDrop = false;
-    const d = document.getElementById("sale-cust-drop");
-    if (d) d.classList.add("hidden");
-  }
-  if (
-    !e.target.closest("#sale-prod-search") &&
-    !e.target.closest("#sale-prod-drop") &&
-    !e.target.closest("#sale-add-form")
-  ) {
-    S.showProdDrop = false;
-    const d = document.getElementById("sale-prod-drop");
-    if (d) d.classList.add("hidden");
-  }
-});
-
-// Input handlers
-document.addEventListener("input", (e) => {
-  if (S.mode !== "form") return;
-
-  if (e.target.id === "sale-cust-search") {
-    debounce(async () => {
-      const term = e.target.value.trim();
-      if (term.length === 0) {
-        S.customerResults = [];
-        renderCustomerDropdown([]);
-        return;
-      }
-      const result = await CustomerService.getAll({
-        search: term,
-        activeOnly: true,
-      });
-      if (result.success) {
-        S.customerResults = result.data;
-        renderCustomerDropdown(result.data);
-      }
-    }, 200)();
-    return;
-  }
-
-  if (e.target.id === "sale-prod-search") {
-    debounce(async () => {
-      const term = e.target.value.trim();
-      if (term.length === 0) {
-        S.productResults = [];
-        renderProductDropdown([]);
-        return;
-      }
-      const result = await ProductService.getAll({
-        search: term,
-        activeOnly: true,
-      });
-      if (result.success) {
-        S.productResults = result.data;
-        renderProductDropdown(result.data);
-      }
-    }, 200)();
-    return;
-  }
-
-  if (e.target.id === "sale-discount") {
-    S.discount = e.target.value;
-    renderPayment();
-    renderSummary();
-    return;
-  }
-
-  if (e.target.id === "sale-paid") {
-    S.amountPaid = e.target.value;
-    renderPayment();
-    renderSummary();
-    return;
-  }
-});
-
-// ============================================================
-// UTILITY
-// ============================================================
-
-function escapeHtml(str) {
-  if (!str) return "";
-  const map = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => map[c]);
-}

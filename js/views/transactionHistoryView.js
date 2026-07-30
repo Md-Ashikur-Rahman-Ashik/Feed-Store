@@ -1,7 +1,6 @@
 import db from "../db/schema.js";
-import { formatCurrency, formatNumber, toBool } from "../utils/helpers.js";
-import { todayDate } from "../utils/uuid.js";
-import { updateHeader, updateNav } from "./viewHelpers.js";
+import { formatCurrency, formatNumber, escapeHtml } from "../utils/helpers.js";
+import { useMountEffect, updateHeader, updateNav } from "./viewHelpers.js";
 
 let filterType = "ALL";
 let filterFrom = "";
@@ -17,7 +16,44 @@ export async function renderTransactionHistory(mount) {
   searchTerm = "";
   mount.innerHTML = buildShell();
   await loadTransactions();
-}
+
+  useMountEffect(({ on }) => {
+    on("click", (e) => {
+      const tab = e.target.closest(".tx-tab");
+      if (tab) {
+        filterType = tab.dataset.type;
+        document
+          .querySelectorAll(".tx-tab")
+          .forEach((t) =>
+            t.classList.toggle("active", t.dataset.type === filterType),
+          );
+        loadTransactions();
+        return;
+      }
+    });
+
+    on("input", (e) => {
+      if (e.target.id === "tx-search") {
+        searchTerm = e.target.value;
+        loadTransactions();
+        return;
+      }
+    });
+
+    on("change", (e) => {
+      if (e.target.id === "tx-from") {
+        filterFrom = e.target.value;
+        loadTransactions();
+        return;
+      }
+      if (e.target.id === "tx-to") {
+        filterTo = e.target.value;
+        loadTransactions();
+        return;
+      }
+    });
+  });
+
 
 function buildShell() {
   return `
@@ -172,48 +208,5 @@ async function loadTransactions() {
   if (window.lucide) lucide.createIcons();
 }
 
-document.addEventListener("click", (e) => {
-  const tab = e.target.closest(".tx-tab");
-  if (tab) {
-    filterType = tab.dataset.type;
-    document
-      .querySelectorAll(".tx-tab")
-      .forEach((t) =>
-        t.classList.toggle("active", t.dataset.type === filterType),
-      );
-    loadTransactions();
-    return;
-  }
-});
 
-document.addEventListener("input", (e) => {
-  if (e.target.id === "tx-search") {
-    searchTerm = e.target.value;
-    loadTransactions();
-    return;
-  }
-});
-document.addEventListener("change", (e) => {
-  if (e.target.id === "tx-from") {
-    filterFrom = e.target.value;
-    loadTransactions();
-    return;
-  }
-  if (e.target.id === "tx-to") {
-    filterTo = e.target.value;
-    loadTransactions();
-    return;
-  }
-});
 
-function escapeHtml(str) {
-  if (!str) return "";
-  const m = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => m[c]);
-}

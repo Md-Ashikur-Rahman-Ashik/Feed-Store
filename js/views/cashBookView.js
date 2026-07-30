@@ -1,7 +1,7 @@
 import db from "../db/schema.js";
-import { formatCurrency } from "../utils/helpers.js";
+import { formatCurrency, escapeHtml } from "../utils/helpers.js";
 import { todayDate } from "../utils/uuid.js";
-import { updateHeader, updateNav } from "./viewHelpers.js";
+import { useMountEffect, updateHeader, updateNav } from "./viewHelpers.js";
 
 let selectedDate = todayDate();
 
@@ -20,7 +20,16 @@ export async function renderCashBook(mount) {
         </div>
     `;
   await loadCashBook();
-}
+
+  useMountEffect(({ on }) => {
+    on("change", (e) => {
+      if (e.target.id === "cb-date") {
+        selectedDate = e.target.value;
+        loadCashBook();
+      }
+    });
+  });
+
 
 async function loadCashBook() {
   const body = document.getElementById("cb-body");
@@ -120,12 +129,7 @@ async function loadCashBook() {
   if (window.lucide) lucide.createIcons();
 }
 
-document.addEventListener("change", (e) => {
-  if (e.target.id === "cb-date") {
-    selectedDate = e.target.value;
-    loadCashBook();
-  }
-});
+
 
 function formatDateLong(str) {
   return new Date(str + "T00:00:00").toLocaleDateString("en", {
@@ -134,15 +138,4 @@ function formatDateLong(str) {
     month: "long",
     day: "numeric",
   });
-}
-function escapeHtml(str) {
-  if (!str) return "";
-  const m = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => m[c]);
 }

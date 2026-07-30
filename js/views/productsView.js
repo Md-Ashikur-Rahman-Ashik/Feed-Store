@@ -21,8 +21,9 @@ import {
   formatNumber,
   debounce,
   toBool,
+  escapeHtml,
 } from "../utils/helpers.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { useMountEffect, updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
 // ============================================================
 // VIEW STATE
@@ -65,7 +66,61 @@ export async function renderProducts(mount) {
 
   // Load and render products
   await loadProducts();
-}
+
+  useMountEffect(({ on, signal }) => {
+    on("click", (e) => {
+      // FAB
+      if (e.target.closest("#p-fab")) {
+        e.preventDefault();
+        openAddSheet();
+        return;
+      }
+
+      // Sheet overlay close
+      if (e.target.closest("#p-sheet-overlay")) {
+        closeSheet();
+        return;
+      }
+
+      // Archive cancel
+      if (e.target.closest("#p-archive-cancel")) {
+        closeArchiveModal();
+        return;
+      }
+
+      // Archive confirm
+      if (e.target.closest("#p-archive-confirm")) {
+        confirmArchive();
+        return;
+      }
+
+      // Archive modal overlay
+      if (e.target.id === "p-archive-modal") {
+        closeArchiveModal();
+        return;
+      }
+
+      // Filter tabs
+      const tab = e.target.closest(".filter-tab");
+      if (tab) {
+        viewState.activeFilter = tab.dataset.filter;
+        updateFilterTabs();
+        loadProducts();
+        return;
+      }
+    });
+
+    on("input", (e) => {
+      if (e.target.id === "p-search") {
+        const debounced = debounce(() => {
+          viewState.searchTerm = e.target.value;
+          loadProducts();
+        }, 250, signal);
+        debounced();
+      }
+    });
+  });
+
 
 // ============================================================
 // DATA LOADING
@@ -618,75 +673,3 @@ async function confirmArchive() {
   }
 }
 
-// ============================================================
-// EVENT DELEGATION
-// ============================================================
-
-document.addEventListener("click", (e) => {
-  // FAB
-  if (e.target.closest("#p-fab")) {
-    e.preventDefault();
-    openAddSheet();
-    return;
-  }
-
-  // Sheet overlay close
-  if (e.target.closest("#p-sheet-overlay")) {
-    closeSheet();
-    return;
-  }
-
-  // Archive cancel
-  if (e.target.closest("#p-archive-cancel")) {
-    closeArchiveModal();
-    return;
-  }
-
-  // Archive confirm
-  if (e.target.closest("#p-archive-confirm")) {
-    confirmArchive();
-    return;
-  }
-
-  // Archive modal overlay
-  if (e.target.id === "p-archive-modal") {
-    closeArchiveModal();
-    return;
-  }
-
-  // Filter tabs
-  const tab = e.target.closest(".filter-tab");
-  if (tab) {
-    viewState.activeFilter = tab.dataset.filter;
-    updateFilterTabs();
-    loadProducts();
-    return;
-  }
-});
-
-// Search input with debounce
-document.addEventListener("input", (e) => {
-  if (e.target.id === "p-search") {
-    const debounced = debounce(() => {
-      viewState.searchTerm = e.target.value;
-      loadProducts();
-    }, 250);
-    debounced();
-  }
-});
-
-// ============================================================
-// UTILITY
-// ============================================================
-
-function escapeHtml(str) {
-  if (!str) return "";
-  const map = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => map[c]);
-}

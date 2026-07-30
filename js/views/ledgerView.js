@@ -1,8 +1,8 @@
 import CustomerService from "../services/customerService.js";
 import SupplierService from "../services/supplierService.js";
-import { formatCurrency } from "../utils/helpers.js";
+import { formatCurrency, escapeHtml } from "../utils/helpers.js";
 import { todayDate } from "../utils/uuid.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { updateHeader, updateNav } from "./viewHelpers.js";
 
 export async function renderLedger(mount) {
   const hash = window.location.hash;
@@ -92,14 +92,3 @@ export async function renderLedger(mount) {
   if (window.lucide) lucide.createIcons();
 }
 
-function escapeHtml(str) {
-  if (!str) return "";
-  const m = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => m[c]);
-}

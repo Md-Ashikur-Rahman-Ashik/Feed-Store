@@ -1,7 +1,7 @@
 import ReportService from "../services/reportService.js";
-import { formatCurrency, formatNumber } from "../utils/helpers.js";
+import { formatCurrency, formatNumber, escapeHtml } from "../utils/helpers.js";
 import { todayDate } from "../utils/uuid.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { useMountEffect, updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
 let selectedDate = todayDate();
 let rangeFrom = todayDate();
@@ -14,7 +14,42 @@ export async function renderReports(mount) {
   activeSection = "daily";
   mount.innerHTML = buildShell();
   await loadSection();
-}
+
+  useMountEffect(({ on }) => {
+    on("click", (e) => {
+      const tab = e.target.closest(".rpt-tab");
+      if (tab) {
+        activeSection = tab.dataset.section;
+        loadSection();
+        return;
+      }
+
+      if (e.target.closest(".rpt-view-ledger")) {
+        const btn = e.target.closest(".rpt-view-ledger");
+        window.location.hash = `#${btn.dataset.type}-ledger?id=${btn.dataset.id}`;
+        return;
+      }
+    });
+
+    on("change", (e) => {
+      if (e.target.id === "rpt-date") {
+        selectedDate = e.target.value;
+        loadDaily();
+        return;
+      }
+      if (e.target.id === "rpt-from") {
+        rangeFrom = e.target.value;
+        loadRange();
+        return;
+      }
+      if (e.target.id === "rpt-to") {
+        rangeTo = e.target.value;
+        loadRange();
+        return;
+      }
+    });
+  });
+
 
 function buildShell() {
   return `
@@ -360,41 +395,6 @@ async function renderCredits(el) {
   if (window.lucide) lucide.createIcons();
 }
 
-// --- Events ---
-
-document.addEventListener("click", (e) => {
-  const tab = e.target.closest(".rpt-tab");
-  if (tab) {
-    activeSection = tab.dataset.section;
-    loadSection();
-    return;
-  }
-
-  if (e.target.closest(".rpt-view-ledger")) {
-    const btn = e.target.closest(".rpt-view-ledger");
-    window.location.hash = `#${btn.dataset.type}-ledger?id=${btn.dataset.id}`;
-    return;
-  }
-});
-
-document.addEventListener("change", (e) => {
-  if (e.target.id === "rpt-date") {
-    selectedDate = e.target.value;
-    loadDaily();
-    return;
-  }
-  if (e.target.id === "rpt-from") {
-    rangeFrom = e.target.value;
-    loadRange();
-    return;
-  }
-  if (e.target.id === "rpt-to") {
-    rangeTo = e.target.value;
-    loadRange();
-    return;
-  }
-});
-
 function formatDateLong(str) {
   return new Date(str + "T00:00:00").toLocaleDateString("en", {
     weekday: "long",
@@ -408,15 +408,4 @@ function formatDateShort(str) {
     month: "short",
     day: "numeric",
   });
-}
-function escapeHtml(str) {
-  if (!str) return "";
-  const m = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => m[c]);
 }

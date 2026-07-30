@@ -1,6 +1,6 @@
 import CustomerService from "../services/customerService.js";
-import { formatCurrency, debounce } from "../utils/helpers.js";
-import { updateHeader, updateNav, showToast } from "./viewHelpers.js";
+import { formatCurrency, debounce, escapeHtml } from "../utils/helpers.js";
+import { useMountEffect, updateHeader, updateNav, showToast } from "./viewHelpers.js";
 
 const viewState = {
   customers: [],
@@ -22,7 +22,66 @@ export async function renderCustomers(mount) {
   viewState.sheetMode = null;
   mount.innerHTML = buildShell();
   await loadCustomers();
-}
+
+  useMountEffect(({ on, signal }) => {
+    on("click", (e) => {
+      if (e.target.closest("#c-fab")) {
+        e.preventDefault();
+        openAddSheet();
+        return;
+      }
+      if (e.target.closest("#c-sheet-overlay")) {
+        closeSheet();
+        return;
+      }
+      if (e.target.closest("#c-archive-cancel")) {
+        closeArchiveModal();
+        return;
+      }
+      if (e.target.closest("#c-archive-confirm")) {
+        confirmArchive();
+        return;
+      }
+      if (e.target.id === "c-archive-modal") {
+        closeArchiveModal();
+        return;
+      }
+
+      const tab = e.target.closest(".filter-tab");
+      if (tab && tab.closest("#c-list") === null) {
+        // Only handle tabs within the customers view
+        const listContainer = document.getElementById("c-list");
+        if (listContainer && tab.closest(".p-4") === listContainer.parentElement) {
+          viewState.activeFilter = tab.dataset.filter;
+          document.querySelectorAll(".filter-tab").forEach((t) => {
+            t.classList.toggle(
+              "active",
+              t.dataset.filter === viewState.activeFilter,
+            );
+          });
+          loadCustomers();
+        }
+        return;
+      }
+
+      if (e.target.closest(".cust-view-ledger")) {
+        closeSheet();
+        const id = e.target.closest(".cust-view-ledger").dataset.id;
+        window.location.hash = `#customer-ledger?id=${id}`;
+        return;
+      }
+    });
+
+    on("input", (e) => {
+      if (e.target.id === "c-search") {
+        debounce(() => {
+          viewState.searchTerm = e.target.value;
+          loadCustomers();
+        }, 250, signal)();
+      }
+    });
+  });
+
 
 async function loadCustomers() {
   viewState.loading = true;
@@ -402,73 +461,3 @@ async function confirmArchive() {
   }
 }
 
-// --- EVENT DELEGATION ---
-
-document.addEventListener("click", (e) => {
-  if (e.target.closest("#c-fab")) {
-    e.preventDefault();
-    openAddSheet();
-    return;
-  }
-  if (e.target.closest("#c-sheet-overlay")) {
-    closeSheet();
-    return;
-  }
-  if (e.target.closest("#c-archive-cancel")) {
-    closeArchiveModal();
-    return;
-  }
-  if (e.target.closest("#c-archive-confirm")) {
-    confirmArchive();
-    return;
-  }
-  if (e.target.id === "c-archive-modal") {
-    closeArchiveModal();
-    return;
-  }
-
-  const tab = e.target.closest(".filter-tab");
-  if (tab && tab.closest("#c-list") === null) {
-    // Only handle tabs within the customers view
-    const listContainer = document.getElementById("c-list");
-    if (listContainer && tab.closest(".p-4") === listContainer.parentElement) {
-      viewState.activeFilter = tab.dataset.filter;
-      document.querySelectorAll(".filter-tab").forEach((t) => {
-        t.classList.toggle(
-          "active",
-          t.dataset.filter === viewState.activeFilter,
-        );
-      });
-      loadCustomers();
-    }
-    return;
-  }
-
-  if (e.target.closest(".cust-view-ledger")) {
-    closeSheet();
-    const id = e.target.closest(".cust-view-ledger").dataset.id;
-    window.location.hash = `#customer-ledger?id=${id}`;
-    return;
-  }
-});
-
-document.addEventListener("input", (e) => {
-  if (e.target.id === "c-search") {
-    debounce(() => {
-      viewState.searchTerm = e.target.value;
-      loadCustomers();
-    }, 250)();
-  }
-});
-
-function escapeHtml(str) {
-  if (!str) return "";
-  const map = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => map[c]);
-}

@@ -1,5 +1,5 @@
 import db from "./db/schema.js";
-import { CONFIG, CATEGORY_COLORS } from "./config.js";
+import { CONFIG } from "./config.js";
 import * as auth from "./utils/auth.js";
 import * as router from "./router.js";
 import SettingsService from "./services/settingsService.js";

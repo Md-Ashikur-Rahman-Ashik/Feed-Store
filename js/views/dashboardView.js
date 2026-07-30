@@ -1,7 +1,6 @@
 import db from "../db/schema.js";
-import { CATEGORY_COLORS } from "../config.js";
-import { todayDate, nowISO } from "../utils/uuid.js";
-import { formatCurrency, formatNumber, toBool } from "../utils/helpers.js";
+import { todayDate } from "../utils/uuid.js";
+import { formatCurrency, formatNumber, toBool, escapeHtml } from "../utils/helpers.js";
 import { updateHeader, updateNav } from "./viewHelpers.js";
 
 export async function renderDashboard(mount) {
@@ -26,6 +25,20 @@ export async function renderDashboard(mount) {
     debtors,
     categoryStock,
   });
+
+  // Attach click handlers (instead of inline onclick)
+  const lowStockEl = document.getElementById("dash-low-stock");
+  if (lowStockEl) {
+    lowStockEl.addEventListener("click", () => {
+      window.location.hash = "#products";
+    });
+  }
+  const viewCustBtn = document.getElementById("dash-view-customers");
+  if (viewCustBtn) {
+    viewCustBtn.addEventListener("click", () => {
+      window.location.hash = "#customers";
+    });
+  }
 
   if (window.lucide) lucide.createIcons();
 }
@@ -270,8 +283,7 @@ function buildLowStockAlert(products) {
       : "";
 
   return `
-        <div class="bg-red-50 border border-red-200 rounded-xl p-3 cursor-pointer active:bg-red-100 transition-colors"
-             onclick="window.location.hash='#products'">
+        <div id="dash-low-stock" class="bg-red-50 border border-red-200 rounded-xl p-3 cursor-pointer active:bg-red-100 transition-colors">
             <div class="flex items-start gap-2">
                 <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0"></i>
                 <div>
@@ -440,7 +452,7 @@ function buildDebtors(debtors) {
                 <span class="text-xs font-bold text-red-600">${formatCurrency(totalOwed)} total</span>
             </div>
             ${list}
-            <button onclick="window.location.hash='#customers'"
+            <button id="dash-view-customers"
                 class="w-full mt-3 pt-2 border-t border-stone-100 text-xs font-semibold
                        text-amber-700 text-center">
                 View All Customers
@@ -499,14 +511,3 @@ function formatDateLong(dateStr) {
   });
 }
 
-function escapeHtml(str) {
-  if (!str) return "";
-  const map = {
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;",
-  };
-  return str.replace(/[&<>"']/g, (c) => map[c]);
-}

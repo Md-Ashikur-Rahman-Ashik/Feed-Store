@@ -26,9 +26,17 @@ export function formatNumber(num) {
   });
 }
 
-/** Debounce a function call. */
-export function debounce(fn, delay) {
+/**
+ * Debounce a function call.
+ * @param {Function} fn
+ * @param {number} delay
+ * @param {AbortSignal} [signal] — if provided, the pending timer is cancelled when this signal fires
+ */
+export function debounce(fn, delay, signal) {
   let timer;
+  if (signal) {
+    signal.addEventListener("abort", () => clearTimeout(timer), { once: true });
+  }
   return function (...args) {
     clearTimeout(timer);
     timer = setTimeout(() => fn.apply(this, args), delay);
@@ -41,4 +49,17 @@ export function debounce(fn, delay) {
  */
 export function toBool(val) {
   return val === true || val === 1;
+}
+
+/** Escape HTML entities to prevent XSS. */
+export function escapeHtml(str) {
+  if (!str) return "";
+  const map = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  };
+  return str.replace(/[&<>"']/g, (c) => map[c]);
 }
